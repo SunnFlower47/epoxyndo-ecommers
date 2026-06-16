@@ -1,0 +1,41 @@
+services:
+    minio:
+        image: 'minio/minio:latest'
+        ports:
+            - '${FORWARD_MINIO_PORT:-9010}:9000'
+            - '${FORWARD_MINIO_CONSOLE_PORT:-8910}:8900'
+        environment:
+            MINIO_ROOT_USER: 'sail'
+            MINIO_ROOT_PASSWORD: 'password'
+        volumes:
+            - 'sail-minio:/data'
+        command: 'minio server /data --console-address ":8900"'
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - '-f'
+                - 'http://localhost:9000/minio/health/live'
+            retries: 3
+            timeout: 5s
+    
+    # We add a minio setup container that automatically creates the default 'local' bucket.
+    minio-setup:
+        image: 'minio/mc:latest'
+        depends_on:
+            minio:
+                condition: service_healthy
+        environment:
+            MINIO_ROOT_USER: 'sail'
+            MINIO_ROOT_PASSWORD: 'password'
+        entrypoint: >
+            /bin/sh -c "
+            /usr/bin/mc alias set minio http://minio:9000 sail password;
+            /usr/bin/mc mb minio/local || true;
+            /usr/bin/mc anonymous set public minio/local;
+            exit 0;
+            "
+
+volumes:
+    sail-minio:
+        driver: local
