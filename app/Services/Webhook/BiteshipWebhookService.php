@@ -18,11 +18,11 @@ class BiteshipWebhookService
         $biteshipOrderId = $payload['order_id'] ?? $payload['id'] ?? null;
         $status = $payload['status'] ?? null; 
         
-        // Biteship webhook usually sends waybill_id inside courier object
-        $waybillNumber = $payload['courier_tracking_id'] ?? $payload['courier']['waybill_id'] ?? $payload['courier']['tracking_id'] ?? null;
+        // Biteship webhook usually sends waybill_id at the root for 'order.waybill_id' event
+        $waybillNumber = $payload['waybill_id'] ?? $payload['courier_tracking_id'] ?? ($payload['courier']['waybill_id'] ?? null) ?? ($payload['courier']['tracking_id'] ?? null);
 
+        // Sometimes ping sends empty order_id
         if (!$biteshipOrderId) {
-            Log::warning("Biteship webhook missing order_id");
             return false;
         }
 
@@ -33,7 +33,12 @@ class BiteshipWebhookService
             return false;
         }
 
-        $updateData = ['status' => $this->mapStatus($status)];
+        $updateData = [];
+        
+        // Hanya update status jika status dari webhook tidak kosong
+        if ($status) {
+            $updateData['status'] = $this->mapStatus($status);
+        }
         
         // Update tracking number if we receive it from webhook
         if ($waybillNumber && !$shipment->tracking_number) {
@@ -41,13 +46,17 @@ class BiteshipWebhookService
             $updateData['biteship_tracking_id'] = $waybillNumber;
         }
 
-        $shipment->update($updateData);
+        if (!empty($updateData)) {
+            $shipment->update($updateData);
+        }
 
         // If delivered, update order status as well
-        if ($updateData['status'] === 'delivered') {
-            $shipment->order->update(['status' => 'completed']);
-        } else if ($updateData['status'] === 'shipping') {
-            $shipment->order->update(['status' => 'shipped']);
+        if (isset($updateData['status'])) {
+            if ($updateData['status'] === 'delivered') {
+                $shipment->order->update(['status' => 'completed']);
+            } else if ($updateData['status'] === 'shipping') {
+                $shipment->order->update(['status' => 'shipped']);
+            }
         }
 
         return true;
