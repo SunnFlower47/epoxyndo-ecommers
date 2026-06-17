@@ -10,6 +10,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote')->hourly();
 
 // Jalankan queue worker secara otomatis tiap menit (berguna untuk shared hosting)
-Schedule::command('queue:work --stop-when-empty')
+Schedule::command('queue:work --max-time=50 --stop-when-empty')
     ->everyMinute()
     ->withoutOverlapping();
