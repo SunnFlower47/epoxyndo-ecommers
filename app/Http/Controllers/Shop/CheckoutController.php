@@ -372,7 +372,7 @@ class CheckoutController extends Controller
                 if ($request->transaction_status == 'capture' || $request->transaction_status == 'settlement') {
                     $order->update([
                         'status' => Order::STATUS_PROCESSING,
-                        'payment_status' => 'Lunas'
+                        'payment_status' => Order::PAYMENT_PAID
                     ]);
                     
                     if ($order->user) {
@@ -381,11 +381,11 @@ class CheckoutController extends Controller
                 } else if ($request->transaction_status == 'cancel' || $request->transaction_status == 'deny' || $request->transaction_status == 'expire') {
                     $order->update([
                         'status' => Order::STATUS_CANCELLED,
-                        'payment_status' => 'Gagal/Batal'
+                        'payment_status' => Order::PAYMENT_FAILED
                     ]);
                 } else if ($request->transaction_status == 'pending') {
                     $order->update([
-                        'payment_status' => 'Belum Bayar'
+                        'payment_status' => Order::PAYMENT_UNPAID
                     ]);
                 }
             }
