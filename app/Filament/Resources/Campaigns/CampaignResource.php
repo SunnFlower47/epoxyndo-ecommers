@@ -72,7 +72,13 @@ class CampaignResource extends Resource
                 
                 \Filament\Tables\Columns\TextColumn::make('sent_count')
                     ->label('Terkirim / Total')
-                    ->formatStateUsing(fn ($record) => "{$record->sent_count} / {$record->total_recipients}"),
+                    ->formatStateUsing(function ($record) {
+                        if ($record->status === 'draft') {
+                            $potentialTotal = \App\Models\Subscriber::where('is_active', true)->count();
+                            return "0 / {$potentialTotal}";
+                        }
+                        return "{$record->sent_count} / {$record->total_recipients}";
+                    }),
                 
                 \Filament\Tables\Columns\TextColumn::make('sent_at')
                     ->label('Tanggal Kirim')

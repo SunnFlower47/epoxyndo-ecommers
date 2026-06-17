@@ -30,7 +30,10 @@ class CampaignMail extends Mailable
         $companyName = $settings->company_name ?? 'Promo Epoxyndo';
 
         return new Envelope(
-            from: new Address($marketingEmail, $companyName),
+            from: new Address(config('mail.from.address'), $companyName),
+            replyTo: [
+                new Address($marketingEmail, $companyName),
+            ],
             subject: $this->campaign->subject,
         );
     }
