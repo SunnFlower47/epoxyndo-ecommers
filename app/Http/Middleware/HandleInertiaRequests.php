@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use App\Models\Setting;
 use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Storage;
 
@@ -38,8 +37,6 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        // Fetch all settings and format as key-value pairs
-        $settings = Setting::all()->pluck('value', 'key')->toArray();
         $generalSettings = app(GeneralSettings::class);
         
         $disk = config('filament.default_filesystem_disk', 'public');
@@ -70,15 +67,26 @@ class HandleInertiaRequests extends Middleware
                 'snapToken' => $request->session()->get('snapToken'),
                 'orderNumber' => $request->session()->get('orderNumber'),
             ],
-            'settings' => $settings,
             'general_settings' => [
                 'company_name' => $generalSettings->company_name,
                 'company_logo' => $logoUrl,
+                'client_logos' => \App\Models\Partner::where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get()
+                    ->map(function($partner) use ($disk, $isS3) {
+                        return [
+                            'id' => $partner->id,
+                            'name' => $partner->name,
+                            'logo' => $isS3 
+                                ? Storage::disk($disk)->temporaryUrl($partner->logo, now()->addMinutes(60))
+                                : Storage::disk($disk)->url($partner->logo)
+                        ];
+                    })->toArray(),
                 'company_address' => $generalSettings->company_address,
                 'support_phone' => $generalSettings->support_phone,
                 'support_email' => $generalSettings->support_email,
                 'tax_percentage' => $generalSettings->tax_percentage,
-            'social_media' => $generalSettings->social_media,
+                'social_media' => $generalSettings->social_media,
             ],
             'shared_categories' => \App\Models\Category::whereNull('parent_id')
                 ->with('children')

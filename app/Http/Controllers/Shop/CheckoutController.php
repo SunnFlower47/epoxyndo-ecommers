@@ -15,9 +15,15 @@ use App\Settings\GeneralSettings;
 
 class CheckoutController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render("checkout");
+        $addresses = [];
+        if ($request->user()) {
+            $addresses = $request->user()->addresses()->orderBy('is_primary', 'desc')->get();
+        }
+        return Inertia::render("checkout", [
+            'addresses' => $addresses
+        ]);
     }
 
     public function process(Request $request)
@@ -34,6 +40,7 @@ class CheckoutController extends Controller
             "postal_code" => "required|string",
             "courier" => "nullable|string",
             "courier_service" => "nullable|string",
+            "coupon_code" => "nullable|string",
         ]);
 
         try {
@@ -42,8 +49,17 @@ class CheckoutController extends Controller
             $subtotal = 0;
             $orderItems = [];
 
+            // Mengambil semua produk sekaligus (Mencegah N+1 Query)
+            $productIds = collect($request->items)->pluck('product_id')->toArray();
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
             foreach ($request->items as $item) {
-                $product = Product::findOrFail($item["product_id"]);
+                $product = $products->get($item["product_id"]);
+                
+                if (!$product) {
+                    throw new \Exception("Produk dengan ID {$item['product_id']} tidak ditemukan.");
+                }
+
                 $price = $product->final_price; 
                 
                 $itemSubtotal = $price * $item["quantity"];
@@ -60,10 +76,40 @@ class CheckoutController extends Controller
             }
 
             $shippingCost = $request->shipping_cost ?? 0;
+            $discountAmount = 0;
+            $couponId = null;
+
+            if ($request->filled('coupon_code')) {
+                $coupon = \App\Models\Coupon::where('code', $request->coupon_code)->first();
+                if ($coupon && $coupon->is_active) {
+                    if ($coupon->valid_until && now()->greaterThan($coupon->valid_until)) {
+                        throw new \Exception("Kupon sudah kedaluwarsa.");
+                    }
+                    if ($subtotal < $coupon->min_purchase) {
+                        throw new \Exception("Minimal belanja untuk kupon ini adalah Rp " . number_format($coupon->min_purchase, 0, ',', '.'));
+                    }
+                    
+                    if ($coupon->discount_type === 'percentage') {
+                        $discountAmount = ($subtotal * $coupon->discount_value) / 100;
+                    } else {
+                        $discountAmount = $coupon->discount_value;
+                    }
+                    
+                    // Diskon tidak boleh melebihi subtotal
+                    if ($discountAmount > $subtotal) {
+                        $discountAmount = $subtotal;
+                    }
+                    
+                    $couponId = $coupon->id;
+                    $coupon->increment('used_count');
+                }
+            }
+
             $taxPercentage = app(GeneralSettings::class)->tax_percentage ?? 11;
-            $taxAmount = ($subtotal * $taxPercentage) / 100;
+            // Pajak dihitung dari subtotal yang sudah dipotong diskon
+            $taxAmount = (($subtotal - $discountAmount) * $taxPercentage) / 100;
             
-            $grandTotal = $subtotal + $shippingCost + $taxAmount;
+            $grandTotal = $subtotal - $discountAmount + $shippingCost + $taxAmount;
 
             $order = Order::create([
                 "user_id" => auth()->id(), // null if guest
@@ -71,6 +117,8 @@ class CheckoutController extends Controller
                 "status" => Order::STATUS_PENDING,
                 "subtotal" => $subtotal,
                 "tax_amount" => $taxAmount,
+                "discount_amount" => $discountAmount,
+                "coupon_id" => $couponId,
                 "shipping_cost" => $shippingCost,
                 "grand_total" => $grandTotal,
                 "customer_name" => $request->customer_name,
@@ -138,6 +186,58 @@ class CheckoutController extends Controller
             DB::rollBack();
             return back()->with("error", "Terjadi kesalahan: " . $e->getMessage());
         }
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'coupon_code' => 'required|string',
+            'subtotal' => 'required|numeric|min:0'
+        ]);
+
+        $coupon = \App\Models\Coupon::where('code', $request->coupon_code)->first();
+
+        if (!$coupon) {
+            return response()->json(['success' => false, 'message' => 'Kode kupon tidak ditemukan.']);
+        }
+
+        if (!$coupon->is_active) {
+            return response()->json(['success' => false, 'message' => 'Kupon ini sudah tidak aktif.']);
+        }
+
+        if ($coupon->valid_from && now()->lessThan($coupon->valid_from)) {
+            return response()->json(['success' => false, 'message' => 'Kupon ini belum bisa digunakan.']);
+        }
+
+        if ($coupon->valid_until && now()->greaterThan($coupon->valid_until)) {
+            return response()->json(['success' => false, 'message' => 'Kupon sudah kedaluwarsa.']);
+        }
+
+        if ($coupon->max_uses && $coupon->used_count >= $coupon->max_uses) {
+            return response()->json(['success' => false, 'message' => 'Kupon ini sudah melewati batas kuota penggunaan.']);
+        }
+
+        if ($request->subtotal < $coupon->min_purchase) {
+            return response()->json(['success' => false, 'message' => 'Minimal belanja untuk kupon ini adalah Rp ' . number_format($coupon->min_purchase, 0, ',', '.')]);
+        }
+
+        $discountAmount = 0;
+        if ($coupon->discount_type === 'percentage') {
+            $discountAmount = ($request->subtotal * $coupon->discount_value) / 100;
+        } else {
+            $discountAmount = $coupon->discount_value;
+        }
+
+        // Diskon tidak boleh melebihi subtotal
+        if ($discountAmount > $request->subtotal) {
+            $discountAmount = $request->subtotal;
+        }
+
+        return response()->json([
+            'success' => true,
+            'discount_amount' => $discountAmount,
+            'message' => 'Kupon berhasil digunakan!'
+        ]);
     }
 
     public function shippingRates(Request $request, BiteshipService $biteship)

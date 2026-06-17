@@ -28,9 +28,11 @@ class OrderController extends Controller
                 $imageUrl = null;
                 if ($item->product && $item->product->images->isNotEmpty()) {
                     $firstImage = $item->product->images->sortBy('sort_order')->first()->image_path;
-                    $imageUrl = $isS3 
-                        ? Storage::disk($disk)->temporaryUrl($firstImage, now()->addMinutes(60))
-                        : Storage::disk($disk)->url($firstImage);
+                    if ($firstImage) {
+                        $imageUrl = $isS3 
+                            ? Storage::disk($disk)->temporaryUrl($firstImage, now()->addMinutes(60))
+                            : Storage::disk($disk)->url($firstImage);
+                    }
                 }
                 
                 return [

@@ -14,9 +14,10 @@ class RolePermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Buat roles
+        $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $staff = Role::firstOrCreate(['name' => 'staff', 'guard_name' => 'web']);
 
-        $this->command->info('✅ Roles admin & staff berhasil dibuat.');
+        $this->command->info('✅ Roles super_admin, admin & staff berhasil dibuat.');
     }
 }

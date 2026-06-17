@@ -66,6 +66,24 @@
     --color-brand-slate: #0F172A;
     --color-brand-bg: #F8FAFC;
     --color-brand-gray: #E2E8F0;
+
+    --animate-marquee: marquee 30s linear infinite;
+
+    @keyframes marquee {
+        from {
+            transform: translateX(0%);
+        }
+        to {
+            transform: translateX(calc(-50% - 1rem));
+        }
+    }
+}
+
+@layer components {
+    .mask-image-linear-gradient-x {
+        -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+    }
 }
 
 :root {

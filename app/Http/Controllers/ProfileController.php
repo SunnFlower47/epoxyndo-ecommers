@@ -26,13 +26,6 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$request->user()->id],
             'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string'],
-            'province' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'district' => ['nullable', 'string', 'max:255'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
-            'latitude' => ['nullable', 'string', 'max:50'],
-            'longitude' => ['nullable', 'string', 'max:50'],
         ]);
 
         $request->user()->fill($validated);

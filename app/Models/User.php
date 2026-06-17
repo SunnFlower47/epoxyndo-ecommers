@@ -30,7 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'phone', 'address', 'province', 'city', 'district', 'postal_code', 'latitude', 'longitude'])]
+#[Fillable(['name', 'email', 'password', 'phone'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, PasskeyUser
 {
@@ -65,6 +65,11 @@ class User extends Authenticatable implements FilamentUser, PasskeyUser
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class);
     }
 
     public function reviews(): HasMany

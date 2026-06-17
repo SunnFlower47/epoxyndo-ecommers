@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Truck, CheckCircle, Clock } from "lucide-react";
 
 export default function Orders() {
-    const { orders, midtrans_is_production } = usePage<any>().props;
+    const { orders, midtrans_is_production, midtrans_client_key } = usePage<any>().props;
     const [activeTab, setActiveTab] = useState('all');
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export default function Orders() {
         if (!document.querySelector(`script[src="${snapScript}"]`)) {
             const script = document.createElement("script");
             script.src = snapScript;
-            script.setAttribute("data-client-key", usePage<any>().props.midtrans_client_key);
+            script.setAttribute("data-client-key", midtrans_client_key);
             script.async = true;
             document.head.appendChild(script);
         }

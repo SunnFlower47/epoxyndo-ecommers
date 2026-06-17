@@ -56,13 +56,6 @@ export function BannerCarousel({ banners, locale }: BannerCarouselProps) {
                             alt={getTranslated(banner.title)}
                             className="absolute inset-0 w-full h-full object-cover"
                         />
-                        {/* Gradient Overlay for text readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent pointer-events-none"></div>
-                        <div className="relative z-20 h-full flex flex-col justify-center px-8 md:px-12 lg:px-16 w-full md:w-2/3 pointer-events-auto">
-                            <h2 className="text-2xl md:text-4xl font-bold text-white drop-shadow-md line-clamp-2">
-                                {getTranslated(banner.title)}
-                            </h2>
-                        </div>
                     </Link>
                 ))
             ) : (

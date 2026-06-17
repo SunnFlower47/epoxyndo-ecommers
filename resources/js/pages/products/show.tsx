@@ -40,13 +40,13 @@ export default function ProductShow({ product, relatedProducts }: any) {
         : [{ image_url: '/assets/logo/logo-epoxyndo.png', id: 'default' }];
 
     const handleAddToCart = () => {
-        addItem({
-            id: product.id,
-            name: productName,
-            price: product.final_price || product.price,
-            image: images[0].image_url,
-            quantity: quantity,
-        });
+        const productForCart = {
+            ...product,
+            primary_image_url: images[0].image_url,
+            name: productName // Flatten name to string to avoid translation parse issues in cart if needed
+        };
+        // Ensure quantity is passed as the SECOND argument so Zustand store picks it up
+        addItem(productForCart, quantity);
         setIsOpen(true);
     };
 
@@ -117,17 +117,30 @@ export default function ProductShow({ product, relatedProducts }: any) {
                         )}
                         <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-4">{productName}</h1>
                         
-                        <div className="flex items-center space-x-4 mb-6">
-                            <div className="flex items-center text-amber-400">
-                                <Star className="w-5 h-5 fill-current" />
-                                <Star className="w-5 h-5 fill-current" />
-                                <Star className="w-5 h-5 fill-current" />
-                                <Star className="w-5 h-5 fill-current" />
-                                <Star className="w-5 h-5 fill-current text-muted" />
-                                <span className="text-muted-foreground text-sm ml-2 font-medium">(4.0)</span>
+                        <div className="flex items-center flex-wrap gap-y-2 text-sm text-muted-foreground mb-6">
+                            <div className="flex items-center text-amber-400 mr-4">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star 
+                                        key={star} 
+                                        className={`w-5 h-5 ${star <= Math.round(product.average_rating || 0) ? 'fill-current' : 'text-muted fill-muted/20'}`} 
+                                    />
+                                ))}
+                                <span className="text-muted-foreground text-sm ml-2 font-medium">
+                                    {product.average_rating > 0 ? product.average_rating.toFixed(1) : '0'} 
+                                    <span className="font-normal text-xs ml-1">({product.reviews_count || 0} {lang === 'id' ? 'Ulasan' : 'Reviews'})</span>
+                                </span>
                             </div>
-                            <div className="w-px h-5 bg-border"></div>
-                            <span className="text-sm text-muted-foreground">{product.stock > 0 ? (lang === 'id' ? 'Tersedia' : 'In Stock') : (lang === 'id' ? 'Habis' : 'Out of Stock')}</span>
+                            
+                            <div className="w-px h-5 bg-border hidden sm:block mr-4"></div>
+                            
+                            <div className="flex items-center mr-4">
+                                <span className="font-medium text-foreground">{product.sold_count || 0}</span>
+                                <span className="ml-1">{lang === 'id' ? 'Terjual' : 'Sold'}</span>
+                            </div>
+                            
+                            <div className="w-px h-5 bg-border hidden sm:block mr-4"></div>
+                            
+                            <span className="font-medium">{product.stock > 0 ? (lang === 'id' ? 'Tersedia' : 'In Stock') : (lang === 'id' ? 'Habis' : 'Out of Stock')}</span>
                         </div>
 
                         <div className="mb-6">
@@ -228,6 +241,48 @@ export default function ProductShow({ product, relatedProducts }: any) {
                     <div className="prose dark:prose-invert max-w-4xl bg-white dark:bg-muted/10 p-6 rounded-xl border">
                         <p className="whitespace-pre-wrap leading-relaxed">{productDesc}</p>
                     </div>
+                </div>
+
+                {/* Product Reviews */}
+                <div className="mt-16 border-t pt-10">
+                    <h2 className="text-2xl font-bold mb-6">{lang === 'id' ? 'Ulasan Pembeli' : 'Customer Reviews'}</h2>
+                    
+                    {product.reviews && product.reviews.length > 0 ? (
+                        <div className="space-y-6 max-w-4xl">
+                            {product.reviews.map((review: any) => (
+                                <div key={review.id} className="bg-white dark:bg-muted/10 p-6 rounded-xl border flex flex-col sm:flex-row gap-4">
+                                    <div className="shrink-0 w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-lg">
+                                        {review.user?.name?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="font-semibold text-foreground">{review.user?.name || 'User'}</h4>
+                                            <span className="text-xs text-muted-foreground">
+                                                {new Date(review.created_at).toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center text-amber-400 mb-3">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star 
+                                                    key={star} 
+                                                    className={`w-4 h-4 ${star <= review.rating ? 'fill-current' : 'text-muted fill-muted/20'}`} 
+                                                />
+                                            ))}
+                                        </div>
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {review.comment}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="bg-muted/30 p-8 rounded-xl border border-dashed flex flex-col items-center justify-center text-center max-w-4xl">
+                            <Star className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                            <h3 className="text-lg font-medium text-foreground mb-1">{lang === 'id' ? 'Belum Ada Ulasan' : 'No Reviews Yet'}</h3>
+                            <p className="text-sm text-muted-foreground">{lang === 'id' ? 'Jadilah yang pertama mengulas produk ini.' : 'Be the first to review this product.'}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Related Products */}
