@@ -57,6 +57,37 @@ class Order extends Model
         ];
     }
 
+    // ─── Lifecycle Hooks ──────────────────────────────────────────────────────
+    protected static function booted()
+    {
+        static::updated(function (Order $order) {
+            // Deduct stock when payment_status changes to 'paid'
+            if ($order->wasChanged('payment_status') && $order->payment_status === self::PAYMENT_PAID) {
+                foreach ($order->items as $item) {
+                    if ($item->variant_id && $item->variant) {
+                        $item->variant->decrement('stock', $item->quantity);
+                    } else if ($item->product) {
+                        $item->product->decrement('stock', $item->quantity);
+                    }
+                }
+            }
+
+            // Restore stock when status changes to 'cancelled' 
+            // ONLY if it was previously paid (because stock is only deducted when paid)
+            if ($order->wasChanged('status') && $order->status === self::STATUS_CANCELLED) {
+                if ($order->payment_status === self::PAYMENT_PAID || $order->getOriginal('payment_status') === self::PAYMENT_PAID) {
+                    foreach ($order->items as $item) {
+                        if ($item->variant_id && $item->variant) {
+                            $item->variant->increment('stock', $item->quantity);
+                        } else if ($item->product) {
+                            $item->product->increment('stock', $item->quantity);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function user(): BelongsTo

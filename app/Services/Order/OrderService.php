@@ -59,8 +59,11 @@ class OrderService
     public function updatePaymentStatus(Order $order, string $status): void
     {
         DB::transaction(function () use ($order, $status) {
-            if ($status === 'paid') {
-                $order->update(['status' => 'processing']);
+            if ($status === 'paid' && $order->payment_status !== 'paid') {
+                $order->update([
+                    'status' => 'processing',
+                    'payment_status' => 'paid',
+                ]);
 
                 // Send payment successful email
                 try {
@@ -69,30 +72,11 @@ class OrderService
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Failed to send OrderPaidMail: ' . $e->getMessage());
                 }
-
-                // Deduct stock for all items
-                foreach ($order->items as $item) {
-                    $product = $item->product;
-                    
-                    if ($item->variant_id) {
-                        $variant = $item->variant;
-                        if ($variant) {
-                            if ($variant->stock < $item->quantity) {
-                                \Illuminate\Support\Facades\Log::warning("Varian {$variant->label} kehabisan stok saat pembayaran, tapi pesanan tetap dilanjutkan.");
-                            }
-                            $variant->decrement('stock', $item->quantity);
-                        }
-                    } else {
-                        if ($product && $product->stock < $item->quantity) {
-                            \Illuminate\Support\Facades\Log::warning("Produk {$product->name} kehabisan stok saat pembayaran, tapi pesanan tetap dilanjutkan.");
-                        }
-                        if ($product) {
-                            $product->decrement('stock', $item->quantity);
-                        }
-                    }
-                }
-            } elseif ($status === 'failed') {
-                $order->update(['status' => 'cancelled']);
+            } elseif ($status === 'failed' && $order->payment_status !== 'failed') {
+                $order->update([
+                    'status' => 'cancelled',
+                    'payment_status' => 'failed',
+                ]);
             }
         });
     }
@@ -107,17 +91,8 @@ class OrderService
                 return;
             }
 
-            // Restore stock if it was already processing/shipped (though cancelling after ship is rare)
-            if (in_array($order->status, ['processing', 'shipping', 'completed'])) {
-                foreach ($order->items as $item) {
-                    if ($item->variant_id && $item->variant) {
-                        $item->variant->increment('stock', $item->quantity);
-                    } else if ($item->product) {
-                        $item->product->increment('stock', $item->quantity);
-                    }
-                }
-            }
-
+            // The Order model's booted() event will automatically handle stock restoration
+            // if the order was previously paid and is now cancelled.
             $order->update(['status' => 'cancelled']);
         });
     }
