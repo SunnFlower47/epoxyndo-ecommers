@@ -130,10 +130,10 @@ export default function Orders() {
                             {/* Action Buttons */}
                             {(order.payment_status === 'unpaid' && order.snap_token) || order.shipment ? (
                                 <div className="p-4 bg-muted/10 border-t flex flex-col sm:flex-row justify-end items-center gap-3">
-                                    {order.shipment && order.status === 'shipped' && (
+                                    {order.shipment && order.shipment.tracking_number && (
                                         <div className="flex-1 text-sm text-muted-foreground w-full">
                                             <Truck className="w-4 h-4 inline mr-2 text-amber-500" />
-                                            Resi: <span className="font-medium text-foreground">{order.shipment.tracking_number}</span> ({order.shipment.courier})
+                                            Resi: <span className="font-medium text-foreground">{order.shipment.tracking_number}</span> ({order.shipment.courier_name || order.shipment.courier || 'Kurir'})
                                         </div>
                                     )}
                                     

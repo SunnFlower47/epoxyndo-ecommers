@@ -93,9 +93,9 @@ class BiteshipService
         $shipment = $order->shipment()->create([
             'courier_name' => $order->courier,
             'courier_service' => $order->courier_service,
-            'tracking_number' => $data['courier']['tracking_id'] ?? null,
+            'tracking_number' => $data['courier']['waybill_id'] ?? null, // Harus waybill_id (Resi Asli)
             'biteship_order_id' => $data['id'] ?? null,
-            'biteship_tracking_id' => $data['courier']['tracking_id'] ?? null,
+            'biteship_tracking_id' => $data['courier']['tracking_id'] ?? null, // FOSix... ditaruh di sini
             'status' => $data['status'] ?? 'placed',
             'shipping_address' => $order->shipping_address,
         ]);
