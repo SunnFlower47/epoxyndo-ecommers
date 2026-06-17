@@ -18,8 +18,10 @@ interface Product {
         name: Record<string, string> | string;
     };
     is_preorder?: boolean;
+    is_preorder?: boolean;
     stock: number;
     rating?: number;
+    average_rating?: number;
     sold_count?: number;
 }
 
@@ -55,7 +57,7 @@ export function ProductCard({ product, locale = 'id' }: { product: Product, loca
     const finalPrice = Number(product.final_price);
     const imageUrl = product.primary_image_url || '/assets/logo/logo-epoxyndo.png';
 
-    const rating = product.rating || 0;
+    const rating = product.average_rating || product.rating || 0;
     const soldCount = product.sold_count || 0;
     
     const saveText = locale === 'id' ? 'Hemat' : 'Save';

@@ -28,12 +28,20 @@ class HomeController extends Controller
             });
 
         $products = Product::with(['primaryImage', 'category'])
+            ->withAvg('reviews', 'rating')
+            ->withSum(['orderItems' => function ($q) {
+                $q->whereHas('order', function ($q) {
+                    $q->whereIn('status', [\App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_SHIPPED]);
+                });
+            }], 'quantity')
             ->where('is_active', true)
             ->latest()
             ->take(12)
             ->get()
             ->map(function($product) use ($disk, $isS3) {
                 $product->append(['has_discount', 'final_price']);
+                $product->average_rating = $product->reviews_avg_rating ? round($product->reviews_avg_rating, 1) : 0;
+                $product->sold_count = $product->order_items_sum_quantity ?? 0;
                 if ($product->primaryImage && $product->primaryImage->image_url) {
                     $product->primary_image_url = $isS3
                         ? Storage::disk($disk)->temporaryUrl($product->primaryImage->image_url, now()->addMinutes(60))

@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AddressController;
+use App\Http\Controllers\ReviewController;
 
 Route::get('/dev/clear-cache', function() {
     Artisan::call('optimize:clear');
@@ -65,6 +66,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
     Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
     Route::post('/addresses/{address}/primary', [AddressController::class, 'setPrimary'])->name('addresses.primary');
+
+    // Reviews API
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
     // Notifications API
     Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
