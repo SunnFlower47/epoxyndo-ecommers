@@ -183,7 +183,7 @@ class CheckoutController extends Controller
 
             try {
                 \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
-                    ->queue(new \App\Mail\OrderPlacedMail($order));
+                    ->send(new \App\Mail\OrderPlacedMail($order));
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send OrderPlacedMail: ' . $e->getMessage());
             }

@@ -103,7 +103,7 @@ class BiteshipService
         // Kirim email notifikasi bahwa barang sedang dikirim (termasuk resi)
         try {
             \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
-                ->queue(new \App\Mail\OrderShippedMail($order, $shipment));
+                ->send(new \App\Mail\OrderShippedMail($order, $shipment));
         } catch (\Exception $e) {
             // Log error email but don't stop the pickup process
             \Illuminate\Support\Facades\Log::error('Failed to send OrderShippedMail: ' . $e->getMessage());
