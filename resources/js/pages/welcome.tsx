@@ -44,6 +44,15 @@ export default function Welcome() {
         "Preorder"
     ];
 
+    const filteredProducts = products.filter(p => {
+        if (activeTab === "Produk Terjual") {
+            return (p as any).sold_count > 0;
+        } else if (activeTab === "Preorder") {
+            return p.is_preorder;
+        }
+        return true;
+    });
+
     return (
         <StorefrontLayout>
             <Head title={`Beranda | ${general_settings?.company_name || 'PT Epoxyndo Art Lestari'}`} />
@@ -56,19 +65,18 @@ export default function Welcome() {
                 <div className="flex flex-col md:flex-row gap-8">
                     
                     {/* Left Sidebar - Etalase Toko */}
-                    <aside className="w-full md:w-64 shrink-0">
+                    <aside className="hidden md:block w-64 shrink-0">
                         <CategorySidebar categories={shared_categories} locale={currentLocale} />
                     </aside>
 
                     {/* Right Content - Products */}
                     <div className="flex-1">
-                        {/* Filter Tabs */}
-                        <div className="flex flex-wrap gap-2 mb-6 border-b pb-4">
+                        <div className="flex overflow-x-auto gap-2 mb-6 border-b pb-4 scrollbar-none snap-x">
                             {filterTabs.map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                                    className={`whitespace-nowrap snap-start px-4 py-2 text-sm font-medium rounded-full transition-colors ${
                                         activeTab === tab 
                                             ? 'bg-primary text-primary-foreground shadow-sm' 
                                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -89,9 +97,9 @@ export default function Welcome() {
                             </Link>
                         </div>
 
-                        {products && products.length > 0 ? (
+                        {filteredProducts && filteredProducts.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                                {products.map((product) => (
+                                {filteredProducts.map((product) => (
                                     <ProductCard key={product.id} product={product} locale={currentLocale} />
                                 ))}
                             </div>

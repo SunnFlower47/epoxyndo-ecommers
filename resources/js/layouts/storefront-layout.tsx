@@ -88,18 +88,18 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
             {/* Header */}
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container mx-auto flex h-16 items-center px-4 md:px-6">
-                    <div className="mr-4 flex md:hidden">
-                        <Button variant="ghost" size="icon" className="mr-2" onClick={() => setShowMobileMenu(true)}>
+                    <div className="mr-2 flex md:hidden shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => setShowMobileMenu(true)}>
                             <Menu className="h-6 w-6" />
                             <span className="sr-only">Toggle Menu</span>
                         </Button>
                     </div>
 
-                    <div className="flex md:w-auto">
-                        <Link href="/" className="mr-6 flex items-center space-x-3">
+                    <div className="flex flex-1 md:flex-none">
+                        <Link href="/" className="mr-2 md:mr-6 flex items-center space-x-3">
                             {/* Logo */}
                             {general_settings?.company_logo && (
-                                <img src={general_settings.company_logo} alt={companyName} className="h-10 md:h-12 w-auto object-contain" />
+                                <img src={general_settings.company_logo} alt={companyName} className="h-9 md:h-12 w-auto object-contain" />
                             )}
                             <span className="font-bold hidden sm:inline-block text-foreground text-lg md:text-xl tracking-tight">
                                 {companyName}
@@ -156,8 +156,8 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                         </form>
                     </div>
 
-                    <div className="flex items-center justify-end space-x-2 md:space-x-4">
-                        <nav className="flex items-center space-x-1">
+                    <div className="flex items-center justify-end space-x-1 sm:space-x-2 md:space-x-4 shrink-0">
+                        <nav className="flex items-center space-x-0.5 sm:space-x-1">
                             {/* Search Toggle */}
                             <Button 
                                 variant="ghost" 
@@ -216,7 +216,7 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                             <div className="h-6 w-px bg-border mx-2 hidden sm:block"></div>
 
                             {auth.user ? (
-                                <div className="hidden sm:flex items-center gap-2">
+                                <div className="flex items-center gap-2">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="rounded-full bg-muted/50 hover:bg-muted border shadow-sm">
@@ -258,24 +258,36 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                                     </DropdownMenu>
                                 </div>
                             ) : (
-                                <div className="hidden sm:flex items-center gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className="border-primary text-primary hover:bg-primary/5"
-                                        onClick={() => { setAuthModalType('login'); setShowAuthModal(true); }}
-                                    >
-                                        {lang === 'id' ? 'Masuk' : 'Login'}
-                                    </Button>
-                                    <Button 
-                                        variant="default" 
-                                        size="sm" 
-                                        className="bg-primary hover:bg-primary/90 text-white"
-                                        onClick={() => { setAuthModalType('register'); setShowAuthModal(true); }}
-                                    >
-                                        {lang === 'id' ? 'Daftar' : 'Register'}
-                                    </Button>
-                                </div>
+                                <>
+                                    <div className="hidden sm:flex items-center gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="border-primary text-primary hover:bg-primary/5"
+                                            onClick={() => { setAuthModalType('login'); setShowAuthModal(true); }}
+                                        >
+                                            {lang === 'id' ? 'Masuk' : 'Login'}
+                                        </Button>
+                                        <Button 
+                                            variant="default" 
+                                            size="sm" 
+                                            className="bg-primary hover:bg-primary/90 text-white"
+                                            onClick={() => { setAuthModalType('register'); setShowAuthModal(true); }}
+                                        >
+                                            {lang === 'id' ? 'Daftar' : 'Register'}
+                                        </Button>
+                                    </div>
+                                    <div className="flex sm:hidden items-center">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="relative hover:bg-muted/50 transition-colors"
+                                            onClick={() => { setAuthModalType('login'); setShowAuthModal(true); }}
+                                        >
+                                            <User className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </>
                             )}
                         </nav>
                     </div>

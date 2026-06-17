@@ -293,7 +293,7 @@ export default function Checkout() {
                         
                         {/* Address Selection Section for Logged in Users */}
                         {auth.user && (
-                            <div className="bg-card border rounded-xl p-6 shadow-sm">
+                            <div className="bg-card border rounded-xl p-4 md:p-6 shadow-sm">
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-xl font-semibold">Alamat Pengiriman</h2>
                                     <Dialog open={isAddressModalOpen} onOpenChange={setIsAddressModalOpen}>
@@ -369,7 +369,7 @@ export default function Checkout() {
                             </div>
                         )}
 
-                        <div className="bg-card border rounded-xl p-6 shadow-sm">
+                        <div className="bg-card border rounded-xl p-4 md:p-6 shadow-sm">
                             <h2 className="text-xl font-semibold mb-6">{selectedAddress ? "Detail Pengiriman (Otomatis)" : "Isi Alamat Pengiriman"}</h2>
                             
                             <form id="checkout-form" onSubmit={handleSubmit} className="space-y-6">
@@ -437,7 +437,7 @@ export default function Checkout() {
                     </div>
 
                     <div className="lg:w-1/3">
-                        <div className="bg-card border rounded-xl p-6 shadow-sm sticky top-24">
+                        <div className="bg-card border rounded-xl p-4 md:p-6 shadow-sm sticky top-24">
                             <h2 className="text-xl font-semibold mb-6">Ringkasan Pesanan</h2>
                             
                             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">

@@ -37,6 +37,7 @@ export default function Orders() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
             },
             body: JSON.stringify({
@@ -174,18 +175,28 @@ export default function Orders() {
                                             </p>
                                             <div className="mt-2 sm:hidden">
                                                 <div className="font-medium text-primary mb-2">{formatCurrency(item.total)}</div>
-                                                {order.status === 'completed' && (
+                                                {order.status === 'completed' && item.can_review && (
                                                     <Button variant="outline" size="sm" onClick={() => openReviewModal(item.product_id, item.product_name)}>
                                                         Beri Ulasan
+                                                    </Button>
+                                                )}
+                                                {order.status === 'completed' && !item.can_review && (
+                                                    <Button variant="ghost" size="sm" disabled className="text-green-600 bg-green-50/50 opacity-100 font-medium">
+                                                        <CheckCircle className="w-3.5 h-3.5 mr-1" /> Telah Diulas
                                                     </Button>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="font-medium text-right hidden sm:block">
                                             <div className="text-primary">{formatCurrency(item.total)}</div>
-                                            {order.status === 'completed' && (
+                                            {order.status === 'completed' && item.can_review && (
                                                 <Button variant="outline" size="sm" className="mt-2" onClick={() => openReviewModal(item.product_id, item.product_name)}>
                                                     Beri Ulasan
+                                                </Button>
+                                            )}
+                                            {order.status === 'completed' && !item.can_review && (
+                                                <Button variant="ghost" size="sm" disabled className="mt-2 text-green-600 bg-green-50/50 opacity-100 font-medium">
+                                                    <CheckCircle className="w-3.5 h-3.5 mr-1" /> Telah Diulas
                                                 </Button>
                                             )}
                                         </div>
