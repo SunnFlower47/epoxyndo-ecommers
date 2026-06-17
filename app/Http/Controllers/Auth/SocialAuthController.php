@@ -42,6 +42,14 @@ class SocialAuthController extends Controller
                     'email_verified_at' => now(), // Google emails are already verified
                 ]);
 
+                \App\Models\Subscriber::updateOrCreate(
+                    ['email' => $user->email],
+                    [
+                        'name' => $user->name,
+                        'is_active' => true,
+                    ]
+                );
+
                 Auth::login($user);
             }
 
