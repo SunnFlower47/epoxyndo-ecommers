@@ -18,8 +18,8 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        $admin->assignRole('admin');
+        $admin->assignRole('super_admin');
 
-        $this->command->info("✅ Admin user seeded: admin@epoxyndo.com / password");
+        $this->command->info("✅ Super Admin user seeded: admin@epoxyndo.com / password");
     }
 }

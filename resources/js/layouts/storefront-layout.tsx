@@ -496,6 +496,29 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                 {children}
             </main>
 
+            {/* Client Logos Slider */}
+            {general_settings?.client_logos && general_settings.client_logos.length > 0 && (
+                <div className="border-t py-8 bg-background overflow-hidden relative">
+                    <div className="container mx-auto px-4 md:px-6 mb-6 text-center">
+                        <h3 className="text-xl font-bold tracking-tight text-foreground">{lang === 'id' ? 'Dipercaya Oleh' : 'Trusted By'}</h3>
+                    </div>
+                    <div className="flex w-full justify-center group overflow-hidden">
+                        {/* Container with max-width and masked edges for the running effect */}
+                        <div className="w-full max-w-4xl overflow-hidden relative mask-image-linear-gradient-x">
+                            <div className="flex animate-marquee space-x-8 px-6 items-center min-w-max">
+                                {general_settings.client_logos.map((partner: any, idx: number) => (
+                                    <img key={idx} src={partner.logo} alt={partner.name} title={partner.name} className="h-10 md:h-14 w-auto max-w-[120px] object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+                                ))}
+                                {/* Duplicate for seamless looping if not enough items */}
+                                {general_settings.client_logos.map((partner: any, idx: number) => (
+                                    <img key={`dup-${idx}`} src={partner.logo} alt={partner.name} title={partner.name} className="h-10 md:h-14 w-auto max-w-[120px] object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Footer */}
             <footer className="border-t py-12 bg-muted/30">
                 <div className="container mx-auto px-4 md:px-6">
@@ -503,7 +526,7 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                         <div className="md:col-span-2">
                             <Link href="/" className="inline-flex items-center space-x-3 mb-4 group">
                                 {general_settings?.company_logo && (
-                                    <img src={general_settings.company_logo} alt={companyName} className="h-12 md:h-16 w-auto object-contain grayscale group-hover:grayscale-0 transition-all opacity-80 group-hover:opacity-100" />
+                                    <img src={general_settings.company_logo} alt={companyName} className="h-12 md:h-16 w-auto object-contain transition-all opacity-80 group-hover:opacity-100" />
                                 )}
                                 <span className="text-xl font-bold text-primary tracking-tight">{companyName}</span>
                             </Link>

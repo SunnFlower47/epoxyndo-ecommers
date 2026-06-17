@@ -70,8 +70,8 @@ export function CartDrawer() {
                                     ? (item.product.name.startsWith('{') ? JSON.parse(item.product.name).id || JSON.parse(item.product.name).en : item.product.name)
                                     : (item.product.name?.id || item.product.name?.en || 'Produk');
                                     
-                                const price = item.product.final_price || item.product.price;
-                                const imageUrl = item.product.primary_image?.r2_url || '/placeholder-product.webp';
+                                const price = item.product.final_price || item.product.price || (item.product as any).price || 0;
+                                const imageUrl = (item.product as any).image || item.product.primary_image_url || item.product.primary_image?.r2_url || item.product.primary_image?.image_url || (item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null) || '/placeholder-product.webp';
 
                                 return (
                                     <div key={item.id} className="flex gap-4 border-b pb-4 last:border-0 last:pb-0">
@@ -124,7 +124,14 @@ export function CartDrawer() {
                     <SheetFooter className="border-t pt-4 flex-col gap-4 sm:flex-col">
                         <div className="flex justify-between items-center w-full">
                             <span className="text-muted-foreground">Total Estimasi</span>
-                            <span className="font-bold text-lg">{formatCurrency(getTotalPrice())}</span>
+                            <span className="font-bold text-lg">
+                                {formatCurrency(
+                                    items.reduce((total, item) => {
+                                        const price = item.product.final_price || item.product.price || (item.product as any).price || 0;
+                                        return total + (Number(price) * item.quantity);
+                                    }, 0)
+                                )}
+                            </span>
                         </div>
                         <Button className="w-full" asChild onClick={() => setIsOpen(false)}>
                             <Link href="/checkout">

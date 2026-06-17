@@ -23,6 +23,8 @@ class GeneralSettings extends Settings
     public ?string $warehouse_latitude;
     public ?string $warehouse_longitude;
 
+    public ?array $client_logos;
+
     public static function group(): string
     {
         return 'general';

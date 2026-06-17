@@ -23,9 +23,20 @@ class ProductController extends Controller
 
         if ($request->has('category')) {
             $categoryName = $request->input('category');
-            $query->whereHas('category', function($q) use ($categoryName) {
-                $q->where('name', 'like', "%{$categoryName}%");
-            });
+            
+            // Temukan ID kategori yang cocok
+            $matchingCategoryIds = \App\Models\Category::where('name', 'like', "%{$categoryName}%")->pluck('id')->toArray();
+            
+            if (!empty($matchingCategoryIds)) {
+                // Temukan ID anak kategorinya
+                $childrenIds = \App\Models\Category::whereIn('parent_id', $matchingCategoryIds)->pluck('id')->toArray();
+                $allCategoryIds = array_unique(array_merge($matchingCategoryIds, $childrenIds));
+                
+                $query->whereIn('category_id', $allCategoryIds);
+            } else {
+                // Jika kategori tidak ditemukan, jangan tampilkan apa-apa
+                $query->where('id', 0);
+            }
         }
 
         if ($request->has('q') && !empty($request->input('q'))) {
@@ -33,8 +44,16 @@ class ProductController extends Controller
             $query->where(function($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
                   ->orWhere('description', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('category', function($catQuery) use ($searchTerm) {
-                      $catQuery->where('name', 'like', "%{$searchTerm}%");
+                  ->orWhereIn('category_id', function($subQuery) use ($searchTerm) {
+                      // Temukan ID kategori yang cocok dengan pencarian
+                      $catIds = \App\Models\Category::where('name', 'like', "%{$searchTerm}%")->pluck('id')->toArray();
+                      if (!empty($catIds)) {
+                          // Sertakan juga ID anak-anaknya
+                          $childIds = \App\Models\Category::whereIn('parent_id', $catIds)->pluck('id')->toArray();
+                          $subQuery->select('id')->from('categories')->whereIn('id', array_merge($catIds, $childIds));
+                      } else {
+                          $subQuery->select('id')->from('categories')->where('id', 0);
+                      }
                   });
             });
         }
@@ -64,12 +83,33 @@ class ProductController extends Controller
         $disk = config('filesystems.default', 'public');
         $isS3 = config("filesystems.disks.{$disk}.driver") === 's3';
 
-        $product = Product::with(['images', 'category'])
-            ->where('slug', $slug)
-            ->where('is_active', true)
-            ->firstOrFail();
+        $product = Product::with([
+            'images', 
+            'category', 
+            'reviews' => function($q) {
+                $q->where('is_approved', true)->with('user')->latest();
+            }
+        ])
+        ->withCount(['reviews as reviews_count' => function($q) {
+            $q->where('is_approved', true);
+        }])
+        ->where('slug', $slug)
+        ->where('is_active', true)
+        ->firstOrFail();
 
         $product->append(['has_discount', 'final_price']);
+
+        // Calculate average rating
+        $product->average_rating = $product->reviews_count > 0 
+            ? round($product->reviews->avg('rating'), 1) 
+            : 0;
+
+        // Calculate sold count (sum of quantities from valid orders)
+        $product->sold_count = \App\Models\OrderItem::where('product_id', $product->id)
+            ->whereHas('order', function($q) {
+                $q->whereIn('status', [\App\Models\Order::STATUS_COMPLETED, \App\Models\Order::STATUS_SHIPPED]);
+            })
+            ->sum('quantity');
 
         // Increment view_count safely (max 1 count per 24 hours per IP for this product)
         $ip = request()->ip();

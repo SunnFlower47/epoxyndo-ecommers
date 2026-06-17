@@ -8,6 +8,7 @@ use App\Http\Controllers\Shop\ProductController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Shop\CheckoutController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\AddressController;
 
 Route::get('/dev/clear-cache', function() {
     Artisan::call('optimize:clear');
@@ -29,6 +30,7 @@ Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleC
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 Route::post('/checkout', [CheckoutController::class, 'process'])->name('checkout.process');
 Route::post('/api/shipping-rates', [CheckoutController::class, 'shippingRates']);
+Route::post('/api/coupons/apply', [CheckoutController::class, 'applyCoupon']);
 Route::post('/midtrans/callback', [CheckoutController::class, 'midtransCallback'])->name('midtrans.callback');
 
 use App\Http\Controllers\ProfileController;
@@ -36,11 +38,31 @@ use App\Http\Controllers\ProfileController;
 // Authenticated Routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $user = auth()->user();
+        $recentOrders = \App\Models\Order::where('user_id', $user->id)
+                            ->latest()
+                            ->take(5)
+                            ->get();
+        $totalOrders = \App\Models\Order::where('user_id', $user->id)->count();
+        $activeOrders = \App\Models\Order::where('user_id', $user->id)
+                            ->whereNotIn('status', ['completed', 'cancelled'])
+                            ->count();
+
+        return Inertia::render('dashboard', [
+            'recentOrders' => $recentOrders,
+            'totalOrders' => $totalOrders,
+            'activeOrders' => $activeOrders,
+        ]);
     })->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+
+    Route::get('/addresses', [AddressController::class, 'index'])->name('addresses.index');
+    Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
+    Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+    Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+    Route::post('/addresses/{address}/primary', [AddressController::class, 'setPrimary'])->name('addresses.primary');
 });

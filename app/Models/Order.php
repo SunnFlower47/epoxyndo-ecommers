@@ -31,6 +31,7 @@ class Order extends Model
         'shipping_address',
         'courier',
         'courier_service',
+        'coupon_id',
     ];
 
     // Status constants
@@ -61,6 +62,11 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function items(): HasMany
