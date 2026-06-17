@@ -21,12 +21,10 @@ class BiteshipController extends Controller
         $payload = $request->all();
 
         // Handle signature / token verification if configured
-        $success = $this->biteshipWebhookService->handleNotification($payload);
+        $this->biteshipWebhookService->handleNotification($payload);
 
-        if ($success) {
-            return response()->json(['status' => 'success', 'message' => 'Notification processed successfully']);
-        }
-
-        return response()->json(['status' => 'error', 'message' => 'Failed to process notification'], 400);
+        // Biteship requires a 200 OK response upon installation (ping)
+        // even if the payload is empty or invalid.
+        return response()->json(['status' => 'success', 'message' => 'Notification received']);
     }
 }
