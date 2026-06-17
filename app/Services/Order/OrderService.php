@@ -62,6 +62,14 @@ class OrderService
             if ($status === 'paid') {
                 $order->update(['status' => 'processing']);
 
+                // Send payment successful email
+                try {
+                    \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                        ->send(new \App\Mail\OrderPaidMail($order));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send OrderPaidMail: ' . $e->getMessage());
+                }
+
                 // Deduct stock for all items
                 foreach ($order->items as $item) {
                     $product = $item->product;

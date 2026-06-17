@@ -100,14 +100,7 @@ class BiteshipService
             'shipping_address' => $order->shipping_address,
         ]);
 
-        // Kirim email notifikasi bahwa barang sedang dikirim (termasuk resi)
-        try {
-            \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
-                ->send(new \App\Mail\OrderShippedMail($order, $shipment));
-        } catch (\Exception $e) {
-            // Log error email but don't stop the pickup process
-            \Illuminate\Support\Facades\Log::error('Failed to send OrderShippedMail: ' . $e->getMessage());
-        }
+        // Email notifikasi akan dikirim melalui Webhook saat resi (waybill_id) sudah benar-benar terbit.
 
         return $shipment;
     }
