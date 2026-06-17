@@ -27,7 +27,7 @@ class ReviewController extends Controller
             })->exists();
 
         if (!$hasBought) {
-            return back()->with('error', 'Anda hanya dapat memberikan ulasan untuk produk yang telah Anda beli dan pesanannya telah selesai.');
+            return response()->json(['message' => 'Anda hanya dapat memberikan ulasan untuk produk yang telah Anda beli dan pesanannya telah selesai.'], 403);
         }
 
         // Check if user already reviewed
@@ -36,7 +36,7 @@ class ReviewController extends Controller
             ->first();
 
         if ($existingReview) {
-            return back()->with('error', 'Anda sudah memberikan ulasan untuk produk ini.');
+            return response()->json(['message' => 'Anda sudah memberikan ulasan untuk produk ini.'], 400);
         }
 
         Review::create([
@@ -47,6 +47,6 @@ class ReviewController extends Controller
             'is_approved' => true, // Auto-approve for now, or you can set to false for moderation
         ]);
 
-        return back()->with('success', 'Terima kasih! Ulasan Anda telah berhasil dikirim.');
+        return response()->json(['message' => 'Terima kasih! Ulasan Anda telah berhasil dikirim.']);
     }
 }
