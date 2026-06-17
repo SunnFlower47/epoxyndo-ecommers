@@ -177,6 +177,19 @@ export default function ProductShow({ product, relatedProducts }: any) {
                             <div className="mb-6">
                                 <h3 className="text-sm font-medium mb-3">{lang === 'id' ? 'Pilih Varian (Berat/Ukuran)' : 'Select Variant (Weight/Size)'}</h3>
                                 <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelectedVariant(null);
+                                            setQuantity(1);
+                                        }}
+                                        className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
+                                            selectedVariant === null 
+                                                ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary' 
+                                                : 'border-border text-muted-foreground hover:border-primary/50'
+                                        }`}
+                                    >
+                                        {lang === 'id' ? `Kemasan Standar` : `Standard Package`}
+                                    </button>
                                     {product.active_variants.map((variant: any) => (
                                         <button
                                             key={variant.id}
