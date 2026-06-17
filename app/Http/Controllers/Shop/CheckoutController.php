@@ -167,7 +167,7 @@ class CheckoutController extends Controller
             $params = [
                 'transaction_details' => [
                     'order_id' => $order->order_number,
-                    'gross_amount' => $order->grand_total,
+                    'gross_amount' => (int) round($order->grand_total),
                 ],
                 'customer_details' => [
                     'first_name' => $order->customer_name,
