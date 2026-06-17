@@ -259,11 +259,22 @@ class CheckoutController extends Controller
         
         foreach ($request->items as $item) {
             $product = Product::find($item['product_id']);
-            if ($product) {
-                $totalWeight += ($product->weight ?? 1000) * $item['quantity'];
-                if ($product->is_bulky) {
-                    $isBulky = true;
-                }
+            if (! $product) {
+                continue;
+            }
+
+            // Prioritize variant weight & bulky flag if a variant is selected
+            $variant = isset($item['variant_id'])
+                ? $product->variants()->find($item['variant_id'])
+                : null;
+
+            $itemWeight = $variant?->weight ?? $product->weight ?? 1000;
+            $itemBulky  = $variant?->is_bulky ?? $product->is_bulky ?? false;
+
+            $totalWeight += $itemWeight * $item['quantity'];
+
+            if ($itemBulky) {
+                $isBulky = true;
             }
         }
 

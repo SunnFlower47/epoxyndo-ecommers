@@ -82,9 +82,12 @@ class HandleInertiaRequests extends Middleware
                                 : Storage::disk($disk)->url($partner->logo)
                         ];
                     })->toArray(),
-                'company_address' => $generalSettings->company_address,
+                'office_address' => $generalSettings->office_address,
+                'marketing_address' => $generalSettings->marketing_address,
+                'factory_address' => $generalSettings->factory_address,
                 'support_phone' => $generalSettings->support_phone,
                 'support_email' => $generalSettings->support_email,
+                'marketing_email' => $generalSettings->marketing_email,
                 'tax_percentage' => $generalSettings->tax_percentage,
                 'social_media' => $generalSettings->social_media,
             ],

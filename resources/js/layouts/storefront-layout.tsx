@@ -530,19 +530,43 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                                 )}
                                 <span className="text-xl font-bold text-primary tracking-tight">{companyName}</span>
                             </Link>
-                            <p className="text-sm text-muted-foreground leading-loose max-w-sm">
-                                {general_settings?.company_address ? String(general_settings.company_address) : 'Jl. Contoh Alamat No. 123, Jakarta, Indonesia.'}
-                            </p>
-                            {general_settings?.support_phone && (
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    <strong>Phone:</strong> {general_settings.support_phone}
-                                </p>
-                            )}
-                            {general_settings?.support_email && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    <strong>Email:</strong> {general_settings.support_email}
-                                </p>
-                            )}
+                            <div className="space-y-4 mb-4">
+                                {general_settings?.office_address && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-foreground">Office & Training</h4>
+                                        <p className="text-sm text-muted-foreground leading-snug">{general_settings.office_address}</p>
+                                    </div>
+                                )}
+                                {general_settings?.marketing_address && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-foreground">Marketing Office</h4>
+                                        <p className="text-sm text-muted-foreground leading-snug">{general_settings.marketing_address}</p>
+                                    </div>
+                                )}
+                                {general_settings?.factory_address && (
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-foreground">Factory</h4>
+                                        <p className="text-sm text-muted-foreground leading-snug">{general_settings.factory_address}</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-2 mt-4">
+                                {general_settings?.support_phone && (
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Phone/WA:</strong> {general_settings.support_phone}
+                                    </p>
+                                )}
+                                {general_settings?.support_email && (
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Support Email:</strong> {general_settings.support_email}
+                                    </p>
+                                )}
+                                {general_settings?.marketing_email && (
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Marketing Email:</strong> {general_settings.marketing_email}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                         <div>
                             <h3 className="font-semibold mb-4 text-foreground">Bantuan</h3>

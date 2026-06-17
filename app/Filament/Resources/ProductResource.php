@@ -7,6 +7,7 @@ use App\Models\Product;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\MarkdownEditor;
@@ -161,6 +162,63 @@ class ProductResource extends Resource
                             ->grid(3)
                             ->orderColumn('sort_order')
                             ->label('Daftar Foto Produk')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Varian Produk (Berat & Harga)')
+                    ->description('Setiap varian mewakili pilihan berat berbeda dengan harga & stok masing-masing.')
+                    ->schema([
+                        Repeater::make('variants')
+                            ->relationship('variants')
+                            ->label('Daftar Varian')
+                            ->schema([
+                                TextInput::make('label')
+                                    ->label('Label Varian')
+                                    ->placeholder('mis. 1 kg, 5 kg, 25 kg')
+                                    ->required()
+                                    ->columnSpan(1),
+
+                                TextInput::make('sku')
+                                    ->label('SKU Varian')
+                                    ->placeholder('Otomatis jika kosong')
+                                    ->columnSpan(1),
+
+                                TextInput::make('price')
+                                    ->label('Harga')
+                                    ->required()
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->columnSpan(1),
+
+                                TextInput::make('stock')
+                                    ->label('Stok')
+                                    ->required()
+                                    ->numeric()
+                                    ->default(0)
+                                    ->minValue(0)
+                                    ->columnSpan(1),
+
+                                TextInput::make('weight')
+                                    ->label('Berat (gram)')
+                                    ->numeric()
+                                    ->suffix('gr')
+                                    ->helperText('Digunakan untuk kalkulasi ongkir')
+                                    ->columnSpan(1),
+
+                                Toggle::make('is_bulky')
+                                    ->label('Kargo / Bulky')
+                                    ->helperText('Aktifkan jika varian ini perlu kurir kargo')
+                                    ->columnSpan(1),
+
+                                Toggle::make('is_active')
+                                    ->label('Aktif')
+                                    ->default(true)
+                                    ->columnSpan(1),
+                            ])
+                            ->columns(2)
+                            ->orderColumn('sort_order')
+                            ->addActionLabel('+ Tambah Varian')
+                            ->collapsible()
                             ->columnSpanFull(),
                     ]),
 
