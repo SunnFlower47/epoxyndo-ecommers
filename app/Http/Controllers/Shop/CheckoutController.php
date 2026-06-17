@@ -70,7 +70,7 @@ class CheckoutController extends Controller
                     throw new \Exception("Varian dengan ID {$variantId} tidak ditemukan.");
                 }
 
-                $price = $variant ? $variant->price : $product->final_price; 
+                $price = $variant ? $variant->final_price : $product->final_price; 
                 
                 $itemSubtotal = $price * $item["quantity"];
                 $subtotal += $itemSubtotal;

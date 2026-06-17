@@ -174,7 +174,7 @@ export const useCartStore = create<CartState>()(
             
             getTotalPrice: () => {
                 return get().items.reduce((total, item) => {
-                    const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price || (item.product as any).price || 0);
+                    const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price || (item.product as any).price || 0);
                     return total + (Number(price) * item.quantity);
                 }, 0);
             }

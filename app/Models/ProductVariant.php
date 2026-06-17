@@ -22,6 +22,8 @@ class ProductVariant extends Model
         'is_active',
     ];
 
+    protected $appends = ['final_price'];
+
     protected function casts(): array
     {
         return [
@@ -39,5 +41,22 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    // ─── Accessors ────────────────────────────────────────────────────────────
+
+    public function getFinalPriceAttribute()
+    {
+        $product = $this->product;
+        
+        if (!$product || !$product->has_discount || empty($product->discount_value)) {
+            return $this->price;
+        }
+
+        if ($product->discount_type === 'percentage') {
+            return (float) $this->price * (1 - ($product->discount_value / 100));
+        }
+
+        return max(0, (float) $this->price - (float) $product->discount_value);
     }
 }

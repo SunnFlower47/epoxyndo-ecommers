@@ -158,12 +158,12 @@ export default function ProductShow({ product, relatedProducts }: any) {
                         <div className="mb-6">
                             <div className="flex items-end gap-3 mb-2">
                                 <span className="text-3xl font-bold text-primary">
-                                    Rp {number_format(selectedVariant ? selectedVariant.price : (product.final_price || product.price))}
+                                    Rp {number_format(selectedVariant ? (selectedVariant.final_price || selectedVariant.price) : (product.final_price || product.price))}
                                 </span>
-                                {!selectedVariant && product.has_discount && (
+                                {product.has_discount && (
                                     <>
                                         <span className="text-lg text-muted-foreground line-through">
-                                            Rp {number_format(product.price)}
+                                            Rp {number_format(selectedVariant ? selectedVariant.price : product.price)}
                                         </span>
                                         <Badge variant="destructive" className="ml-2 bg-red-500 hover:bg-red-600">
                                             {product.discount_type === 'percentage' ? `${product.discount_value}% OFF` : `Rp ${number_format(product.discount_value)} OFF`}

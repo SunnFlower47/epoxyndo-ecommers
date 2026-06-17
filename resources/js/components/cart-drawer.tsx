@@ -71,7 +71,7 @@ export function CartDrawer() {
                                     : (item.product.name?.id || item.product.name?.en || 'Produk');
                                 const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
                                     
-                                const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price || (item.product as any).price || 0);
+                                const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price || (item.product as any).price || 0);
                                 const imageUrl = (item.product as any).image || item.product.primary_image_url || item.product.primary_image?.r2_url || item.product.primary_image?.image_url || (item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null) || '/placeholder-product.webp';
 
                                 return (
@@ -126,12 +126,7 @@ export function CartDrawer() {
                         <div className="flex justify-between items-center w-full">
                             <span className="text-muted-foreground">Total Estimasi</span>
                             <span className="font-bold text-lg">
-                                {formatCurrency(
-                                    items.reduce((total, item) => {
-                                        const price = item.product.final_price || item.product.price || (item.product as any).price || 0;
-                                        return total + (Number(price) * item.quantity);
-                                    }, 0)
-                                )}
+                                {formatCurrency(getTotalPrice())}
                             </span>
                         </div>
                         <Button className="w-full" asChild onClick={() => setIsOpen(false)}>

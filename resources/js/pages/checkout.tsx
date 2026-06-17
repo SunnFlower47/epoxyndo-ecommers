@@ -444,7 +444,7 @@ export default function Checkout() {
                                 {items.map((item) => {
                                     const baseName = typeof item.product.name === "string" ? item.product.name : (item.product.name?.id || "Produk");
                                     const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
-                                    const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price);
+                                    const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price);
                                     
                                     return (
                                         <div key={item.id} className="flex justify-between items-start gap-4 text-sm">
