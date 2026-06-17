@@ -26,7 +26,10 @@ class OrderPlacedMail extends Mailable
         $companyName = $settings->company_name ?? 'Sistem Epoxyndo';
 
         return new Envelope(
-            from: new Address($supportEmail, $companyName),
+            from: new Address(config('mail.from.address'), $companyName),
+            replyTo: [
+                new Address($supportEmail, $companyName),
+            ],
             subject: 'Pesanan Diterima - ' . $this->order->order_number,
         );
     }
