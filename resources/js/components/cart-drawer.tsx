@@ -69,7 +69,7 @@ export function CartDrawer() {
                                 const baseName = typeof item.product.name === 'string' 
                                     ? (item.product.name.startsWith('{') ? JSON.parse(item.product.name).id || JSON.parse(item.product.name).en : item.product.name)
                                     : (item.product.name?.id || item.product.name?.en || 'Produk');
-                                const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
+                                const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : (item.product.variant_label ? `${baseName} - ${item.product.variant_label}` : baseName);
                                     
                                 const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price || (item.product as any).price || 0);
                                 const imageUrl = (item.product as any).image || item.product.primary_image_url || item.product.primary_image?.r2_url || item.product.primary_image?.image_url || (item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null) || '/placeholder-product.webp';

@@ -443,7 +443,7 @@ export default function Checkout() {
                             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
                                 {items.map((item) => {
                                     const baseName = typeof item.product.name === "string" ? item.product.name : (item.product.name?.id || "Produk");
-                                    const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
+                                    const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : (item.product.variant_label ? `${baseName} - ${item.product.variant_label}` : baseName);
                                     const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price);
                                     
                                     return (

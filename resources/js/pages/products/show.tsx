@@ -188,7 +188,7 @@ export default function ProductShow({ product, relatedProducts }: any) {
                                                 : 'border-border text-muted-foreground hover:border-primary/50'
                                         }`}
                                     >
-                                        {lang === 'id' ? `Kemasan Standar` : `Standard Package`}
+                                        {product.variant_label || (lang === 'id' ? `Kemasan Standar` : `Standard Package`)}
                                     </button>
                                     {product.active_variants.map((variant: any) => (
                                         <button

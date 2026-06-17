@@ -80,6 +80,11 @@ class ProductResource extends Resource
                             ->label('Nama Produk (English)')
                             ->maxLength(255),
 
+                        TextInput::make('variant_label')
+                            ->label('Label Kemasan Utama (Opsional)')
+                            ->placeholder('mis: 1 Kg, 1 Set. Kosongkan jika tanpa varian.')
+                            ->maxLength(255),
+
                         TextInput::make('slug')
                             ->label('Slug URL')
                             ->required()
