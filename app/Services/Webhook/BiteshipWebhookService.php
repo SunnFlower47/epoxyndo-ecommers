@@ -15,11 +15,17 @@ class BiteshipWebhookService
     {
         Log::info('Biteship Webhook Payload:', $payload);
 
-        $biteshipOrderId = $payload['order_id'] ?? $payload['id'] ?? null;
-        $status = $payload['status'] ?? null; 
+        // Biteship webhook can sometimes wrap payload in 'data' object
+        $data = $payload['data'] ?? $payload;
+
+        $biteshipOrderId = $data['order_id'] ?? $data['id'] ?? null;
+        $status = $data['status'] ?? null; 
         
-        // Biteship webhook usually sends waybill_id at the root for 'order.waybill_id' event
-        $waybillNumber = $payload['waybill_id'] ?? $payload['courier_tracking_id'] ?? ($payload['courier']['waybill_id'] ?? null) ?? ($payload['courier']['tracking_id'] ?? null);
+        // waybill_id adalah Resi Asli (contoh: JNE12345)
+        $waybillNumber = $data['waybill_id'] ?? ($data['courier']['waybill_id'] ?? null);
+        
+        // tracking_id adalah ID internal Biteship (contoh: FOSix...)
+        $biteshipTrackingId = $data['courier_tracking_id'] ?? ($data['courier']['tracking_id'] ?? null);
 
         // Sometimes ping sends empty order_id
         if (!$biteshipOrderId) {
@@ -40,10 +46,13 @@ class BiteshipWebhookService
             $updateData['status'] = $this->mapStatus($status);
         }
         
-        // Update tracking number if we receive it from webhook
+        // Update tracking number if we receive the ACTUAL waybill
         if ($waybillNumber && !$shipment->tracking_number) {
             $updateData['tracking_number'] = $waybillNumber;
-            $updateData['biteship_tracking_id'] = $waybillNumber;
+        }
+
+        if ($biteshipTrackingId && !$shipment->biteship_tracking_id) {
+            $updateData['biteship_tracking_id'] = $biteshipTrackingId;
         }
 
         if (!empty($updateData)) {
@@ -68,19 +77,30 @@ class BiteshipWebhookService
     protected function mapStatus(?string $status): string
     {
         switch ($status) {
+            case 'placed':
+            case 'scheduled':
+            case 'confirmed':
             case 'allocated':
             case 'picking_up':
+            case 'pickingUp':
                 return 'pending';
             case 'picked_up':
+            case 'picked':
                 return 'picked_up';
+            case 'dropping_off':
             case 'delivering':
+            case 'inTransit':
                 return 'shipping';
             case 'delivered':
                 return 'delivered';
             case 'cancelled':
             case 'rejected':
+            case 'disposed':
+            case 'returned':
                 return 'cancelled';
             default:
+                // Biarkan status yang tidak dikenal tetap masuk log tapi fallback ke pending atau unknown
+                Log::warning("Unknown Biteship status received: " . $status);
                 return 'unknown';
         }
     }
