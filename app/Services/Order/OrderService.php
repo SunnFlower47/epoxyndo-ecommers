@@ -73,10 +73,23 @@ class OrderService
                 // Deduct stock for all items
                 foreach ($order->items as $item) {
                     $product = $item->product;
-                    if ($product->stock < $item->qty) {
-                        throw new Exception("Product {$product->name} is out of stock.");
+                    
+                    if ($item->variant_id) {
+                        $variant = $item->variant;
+                        if ($variant) {
+                            if ($variant->stock < $item->quantity) {
+                                \Illuminate\Support\Facades\Log::warning("Varian {$variant->label} kehabisan stok saat pembayaran, tapi pesanan tetap dilanjutkan.");
+                            }
+                            $variant->decrement('stock', $item->quantity);
+                        }
+                    } else {
+                        if ($product && $product->stock < $item->quantity) {
+                            \Illuminate\Support\Facades\Log::warning("Produk {$product->name} kehabisan stok saat pembayaran, tapi pesanan tetap dilanjutkan.");
+                        }
+                        if ($product) {
+                            $product->decrement('stock', $item->quantity);
+                        }
                     }
-                    $product->decrement('stock', $item->qty);
                 }
             } elseif ($status === 'failed') {
                 $order->update(['status' => 'cancelled']);
@@ -95,9 +108,13 @@ class OrderService
             }
 
             // Restore stock if it was already processing/shipped (though cancelling after ship is rare)
-            if (in_array($order->status, ['processing', 'shipping'])) {
+            if (in_array($order->status, ['processing', 'shipping', 'completed'])) {
                 foreach ($order->items as $item) {
-                    $item->product->increment('stock', $item->qty);
+                    if ($item->variant_id && $item->variant) {
+                        $item->variant->increment('stock', $item->quantity);
+                    } else if ($item->product) {
+                        $item->product->increment('stock', $item->quantity);
+                    }
                 }
             }
 

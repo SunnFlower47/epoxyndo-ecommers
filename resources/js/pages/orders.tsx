@@ -3,11 +3,64 @@ import { Head, usePage } from "@inertiajs/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Truck, CheckCircle, Clock } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, Star, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-hot-toast";
 
 export default function Orders() {
     const { orders, midtrans_is_production, midtrans_client_key } = usePage<any>().props;
     const [activeTab, setActiveTab] = useState('all');
+    
+    // Review state
+    const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+    const [reviewProduct, setReviewProduct] = useState<{ id: number; name: string } | null>(null);
+    const [rating, setRating] = useState(5);
+    const [hoveredRating, setHoveredRating] = useState(0);
+    const [comment, setComment] = useState("");
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    const openReviewModal = (productId: number, productName: string) => {
+        setReviewProduct({ id: productId, name: productName });
+        setRating(5);
+        setComment("");
+        setIsReviewModalOpen(true);
+    };
+
+    const submitReview = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!reviewProduct) return;
+        
+        setIsSubmittingReview(true);
+        fetch('/reviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || ''
+            },
+            body: JSON.stringify({
+                product_id: reviewProduct.id,
+                rating,
+                comment
+            })
+        })
+        .then(async res => {
+            if (res.ok) {
+                toast.success("Ulasan berhasil dikirim!");
+                setIsReviewModalOpen(false);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.message || "Gagal mengirim ulasan.");
+            }
+        })
+        .catch(() => {
+            toast.error("Terjadi kesalahan jaringan.");
+        })
+        .finally(() => {
+            setIsSubmittingReview(false);
+        });
+    };
 
     useEffect(() => {
         // Load Midtrans snap.js if it hasn't been loaded
@@ -119,9 +172,22 @@ export default function Orders() {
                                             <p className="text-sm text-muted-foreground mt-1">
                                                 {item.quantity} x {formatCurrency(item.price)}
                                             </p>
+                                            <div className="mt-2 sm:hidden">
+                                                <div className="font-medium text-primary mb-2">{formatCurrency(item.total)}</div>
+                                                {order.status === 'completed' && (
+                                                    <Button variant="outline" size="sm" onClick={() => openReviewModal(item.product_id, item.product_name)}>
+                                                        Beri Ulasan
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="font-medium text-right hidden sm:block">
-                                            {formatCurrency(item.total)}
+                                            <div className="text-primary">{formatCurrency(item.total)}</div>
+                                            {order.status === 'completed' && (
+                                                <Button variant="outline" size="sm" className="mt-2" onClick={() => openReviewModal(item.product_id, item.product_name)}>
+                                                    Beri Ulasan
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -195,6 +261,66 @@ export default function Orders() {
                     {activeTab === 'completed' && <OrderList items={completedOrders} />}
                 </div>
             </div>
+
+            {/* Review Modal */}
+            <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Beri Ulasan Produk</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={submitReview} className="space-y-4 py-2">
+                        <div>
+                            <Label className="text-sm text-muted-foreground block mb-2">Produk</Label>
+                            <p className="font-medium">{reviewProduct?.name}</p>
+                        </div>
+                        
+                        <div>
+                            <Label className="block mb-2">Rating</Label>
+                            <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setRating(star)}
+                                        onMouseEnter={() => setHoveredRating(star)}
+                                        onMouseLeave={() => setHoveredRating(0)}
+                                        className="focus:outline-none"
+                                    >
+                                        <Star 
+                                            className={`w-8 h-8 transition-colors ${
+                                                star <= (hoveredRating || rating) 
+                                                    ? "fill-yellow-400 text-yellow-400" 
+                                                    : "text-muted-foreground/30"
+                                            }`} 
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="comment" className="block mb-2">Ulasan (Opsional)</Label>
+                            <Textarea 
+                                id="comment"
+                                placeholder="Bagaimana kualitas produk ini?"
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                className="resize-none"
+                                rows={4}
+                            />
+                        </div>
+
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsReviewModalOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button type="submit" disabled={isSubmittingReview}>
+                                {isSubmittingReview ? "Mengirim..." : "Kirim Ulasan"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
