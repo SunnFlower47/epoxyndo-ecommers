@@ -34,7 +34,7 @@ class OrderPlacedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.placed',
+            view: 'emails.orders.placed',
         );
     }
 

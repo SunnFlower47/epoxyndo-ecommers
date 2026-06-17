@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import {
     Sheet,
     SheetContent,
@@ -45,8 +46,12 @@ export function CartDrawer() {
                 <div className="flex-1 overflow-y-auto py-4 -mx-6 px-6">
                     {items.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
-                                <ShoppingCart className="w-10 h-10 text-muted-foreground opacity-50" />
+                            <div className="w-48 h-48 flex items-center justify-center">
+                                <DotLottieReact
+                                  src="/assets/icon/lottie/Empty box.lottie"
+                                  loop
+                                  autoplay
+                                />
                             </div>
                             <div>
                                 <h3 className="font-medium text-lg">Keranjang Kosong</h3>

@@ -46,9 +46,14 @@ class StatsOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('info'),
 
-            Stat::make('Total Pengguna', $totalUsers)
-                ->description('Pelanggan terdaftar')
-                ->descriptionIcon('heroicon-m-users')
+            Stat::make('Pengunjung Unik', VisitorLog::distinct('ip_address')->count())
+                ->description('Total pengunjung website')
+                ->descriptionIcon('heroicon-m-globe-alt')
+                ->color('success'),
+                
+            Stat::make('Total View Produk', Product::sum('view_count'))
+                ->description('Jumlah produk dilihat')
+                ->descriptionIcon('heroicon-m-eye')
                 ->color('warning'),
         ];
     }

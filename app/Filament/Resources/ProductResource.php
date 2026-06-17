@@ -148,14 +148,19 @@ class ProductResource extends Resource
 
                 Section::make('Foto Produk')
                     ->schema([
-                        FileUpload::make('images')
-                            ->label('Upload Foto')
-                            ->multiple()
-                            ->image()
-                            ->reorderable()
-                            ->directory('products')
-                            ->visibility('public')
-                            ->maxFiles(10)
+                        \Filament\Forms\Components\Repeater::make('images')
+                            ->relationship('images')
+                            ->schema([
+                                \Filament\Forms\Components\FileUpload::make('image_url')
+                                    ->label('Foto')
+                                    ->image()
+                                    ->directory('products')
+                                    ->visibility('public')
+                                    ->required(),
+                            ])
+                            ->grid(3)
+                            ->orderColumn('sort_order')
+                            ->label('Daftar Foto Produk')
                             ->columnSpanFull(),
                     ]),
 

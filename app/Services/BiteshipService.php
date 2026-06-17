@@ -27,7 +27,7 @@ class BiteshipService
         $settings = app(GeneralSettings::class);
 
         // Jika alamat tidak lengkap, lemparkan error
-        if (!$order->shipping_address || !isset($order->shipping_address['full_address'])) {
+        if (!$order->shipping_address || (!isset($order->shipping_address['address']) && !isset($order->shipping_address['full_address']))) {
             throw new Exception("Alamat pengiriman belum diisi secara lengkap pada pesanan ini.");
         }
 
@@ -57,13 +57,18 @@ class BiteshipService
             'shipper_organization' => $settings->company_name ?? 'Epoxyndo',
             'origin_contact_name' => $settings->company_name ?? 'Admin',
             'origin_contact_phone' => $settings->support_phone ?? '081234567890',
-            'origin_address' => $settings->company_address ?? 'Jl. Default Address',
+            'origin_address' => $settings->warehouse_address ?? $settings->company_address ?? 'Jl. Default Address',
+            'origin_coordinate' => [
+                'latitude' => (float) ($settings->warehouse_latitude ?? -6.200000),
+                'longitude' => (float) ($settings->warehouse_longitude ?? 106.816666),
+            ],
 
             // Data Penerima (Destination)
-            'destination_contact_name' => $order->shipping_address['name'] ?? $order->user->name,
-            'destination_contact_phone' => $order->shipping_address['phone'] ?? '-',
-            'destination_contact_email' => $order->user->email,
-            'destination_address' => $order->shipping_address['full_address'],
+            'destination_contact_name' => $order->customer_name ?? $order->user?->name ?? 'Pelanggan',
+            'destination_contact_phone' => $order->customer_phone ?? '-',
+            'destination_contact_email' => $order->customer_email ?? $order->user?->email ?? '-',
+            'destination_address' => trim(($order->shipping_address['address'] ?? $order->shipping_address['full_address'] ?? '') . ' ' . ($order->shipping_address['city'] ?? '') . ' ' . ($order->shipping_address['postal_code'] ?? '')),
+            'destination_postal_code' => $order->shipping_address['postal_code'] ?? '',
 
             // Info Pengiriman
             'courier_company' => strtolower($order->courier),
@@ -104,5 +109,20 @@ class BiteshipService
         }
 
         return $shipment;
+    }
+
+    /**
+     * Get shipping rates from Biteship
+     */
+    public function getRates(array $payload)
+    {
+        $response = Http::withToken($this->apiKey)
+            ->post("{$this->baseUrl}/rates/couriers", $payload);
+
+        if ($response->failed()) {
+            throw new Exception('Biteship Rates Error: ' . $response->body());
+        }
+
+        return $response->json();
     }
 }

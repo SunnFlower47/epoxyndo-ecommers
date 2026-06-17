@@ -17,6 +17,11 @@ class GeneralSettings extends Settings
     public ?string $marketing_email;
     public int $tax_percentage;
     public array $social_media;
+    
+    // Warehouse Settings for Biteship
+    public ?string $warehouse_address;
+    public ?string $warehouse_latitude;
+    public ?string $warehouse_longitude;
 
     public static function group(): string
     {

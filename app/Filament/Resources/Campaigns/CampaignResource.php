@@ -44,6 +44,7 @@ class CampaignResource extends Resource
                 
                 \Filament\Forms\Components\RichEditor::make('body')
                     ->label('Isi Konten Email (HTML)')
+                    ->fileAttachmentsDirectory('campaigns')
                     ->required()
                     ->columnSpanFull(),
             ]);

@@ -35,7 +35,7 @@ class OrderShippedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.orders.shipped',
+            view: 'emails.orders.shipped',
         );
     }
 

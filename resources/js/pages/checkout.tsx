@@ -8,35 +8,153 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function Checkout() {
-    const { auth } = usePage<any>().props;
+    const { auth, general_settings, midtrans_client_key, midtrans_is_production, flash } = usePage<any>().props;
     const { items, getTotalPrice, clearCart } = useCartStore();
     const [processing, setProcessing] = useState(false);
     
+    // Inject Midtrans Snap
+    useEffect(() => {
+        const snapScript = midtrans_is_production 
+            ? "https://app.midtrans.com/snap/snap.js"
+            : "https://app.sandbox.midtrans.com/snap/snap.js";
+
+        const script = document.createElement("script");
+        script.src = snapScript;
+        script.setAttribute("data-client-key", midtrans_client_key);
+        script.async = true;
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, [midtrans_client_key, midtrans_is_production]);
+
+    // Check for Flash Messages or Tokens
+    useEffect(() => {
+        if (flash?.error) {
+            alert(flash.error);
+            setProcessing(false);
+        }
+        
+        if (flash?.snapToken) {
+            setProcessing(true); // Keep button as processing while popup is open
+            // Wait for snap to load
+            const checkSnap = setInterval(() => {
+                if ((window as any).snap) {
+                    clearInterval(checkSnap);
+                    (window as any).snap.pay(flash.snapToken, {
+                        onSuccess: function(result: any) {
+                            window.location.href = '/dashboard';
+                        },
+                        onPending: function(result: any) {
+                            window.location.href = '/dashboard';
+                        },
+                        onError: function(result: any) {
+                            alert("Pembayaran gagal!");
+                            setProcessing(false);
+                            window.location.href = '/dashboard';
+                        },
+                        onClose: function() {
+                            setProcessing(false);
+                            window.location.href = '/dashboard';
+                        }
+                    });
+                }
+            }, 500);
+
+            // Timeout after 10 seconds if snap isn't loaded
+            setTimeout(() => {
+                clearInterval(checkSnap);
+                setProcessing(false);
+            }, 10000);
+        }
+    }, [flash]);
+
     const [form, setForm] = useState({
         customer_name: auth.user?.name || "",
         customer_email: auth.user?.email || "",
-        customer_phone: "",
-        shipping_address: "",
-        city: "",
-        postal_code: "",
-        courier: "JNE",
-        courier_service: "REG",
+        customer_phone: auth.user?.phone || "",
+        shipping_address: auth.user?.address || "",
+        city: auth.user?.city || "",
+        postal_code: auth.user?.postal_code || "",
+        courier: "",
+        courier_service: "",
+        shipping_cost: 0,
     });
 
     const [errors, setErrors] = useState<any>({});
+    const [shippingRates, setShippingRates] = useState<any[]>([]);
+    const [loadingRates, setLoadingRates] = useState(false);
 
     useEffect(() => {
-        if (items.length === 0) {
+        if (items.length === 0 && !flash?.snapToken) {
             window.location.href = "/products";
         }
-    }, [items]);
+    }, [items, flash?.snapToken]);
+
+    // Fetch Rates when address info changes
+    useEffect(() => {
+        const fetchRates = async () => {
+            if (form.postal_code && form.postal_code.length >= 4) {
+                setLoadingRates(true);
+                try {
+                    const response = await fetch('/api/shipping-rates', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
+                        body: JSON.stringify({
+                            destination_postal_code: form.postal_code,
+                            items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.pricing) {
+                        setShippingRates(data.pricing);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch rates:", err);
+                } finally {
+                    setLoadingRates(false);
+                }
+            }
+        };
+
+        const debounce = setTimeout(() => {
+            fetchRates();
+        }, 1000);
+
+        return () => clearTimeout(debounce);
+    }, [form.postal_code, items]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        if (val) {
+            const [courier, service, price] = val.split("|");
+            setForm({ 
+                ...form, 
+                courier: courier, 
+                courier_service: service, 
+                shipping_cost: parseInt(price) 
+            });
+        } else {
+            setForm({ ...form, courier: "", courier_service: "", shipping_cost: 0 });
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!form.courier) {
+            alert("Silakan pilih layanan pengiriman.");
+            return;
+        }
+
         setProcessing(true);
         setErrors({});
 
@@ -47,9 +165,6 @@ export default function Checkout() {
                 quantity: item.quantity
             }))
         }, {
-            onSuccess: () => {
-                clearCart();
-            },
             onError: (err) => {
                 setErrors(err);
                 setProcessing(false);
@@ -66,6 +181,11 @@ export default function Checkout() {
         }).format(Number(amount));
     };
 
+    const taxPercentage = general_settings?.tax_percentage || 11;
+    const subtotal = getTotalPrice();
+    const taxAmount = (subtotal * taxPercentage) / 100;
+    const grandTotal = subtotal + form.shipping_cost + taxAmount;
+
     return (
         <StorefrontLayout>
             <Head title="Checkout" />
@@ -76,7 +196,7 @@ export default function Checkout() {
                 {!auth.user && (
                     <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-8">
                         <p className="text-sm">
-                            <strong>Punya akun?</strong> Login sekarang untuk proses checkout yang lebih cepat dan kumpulkan poin reward! 
+                            <strong>Punya akun?</strong> Login sekarang agar form otomatis terisi dan dapatkan poin reward! 
                             <a href="/login" className="text-primary font-medium ml-2 hover:underline">Login di sini</a>
                         </p>
                     </div>
@@ -121,27 +241,29 @@ export default function Checkout() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="postal_code">Kode Pos</Label>
-                                        <Input id="postal_code" name="postal_code" value={form.postal_code} onChange={handleChange} required />
+                                        <Input id="postal_code" name="postal_code" value={form.postal_code} onChange={handleChange} required placeholder="Ketik kode pos untuk cek ongkir..." />
                                         {errors.postal_code && <p className="text-red-500 text-xs">{errors.postal_code}</p>}
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                                <div className="pt-4 border-t">
                                     <div className="space-y-2">
-                                        <Label htmlFor="courier">Kurir</Label>
-                                        <select id="courier" name="courier" value={form.courier} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                                            <option value="JNE">JNE</option>
-                                            <option value="J&T">J&T Express</option>
-                                            <option value="Sicepat">Sicepat</option>
-                                            <option value="Pos">POS Indonesia</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="courier_service">Layanan Pengiriman</Label>
-                                        <select id="courier_service" name="courier_service" value={form.courier_service} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                                            <option value="REG">Regular / Standar</option>
-                                            <option value="YES">Yakin Esok Sampai (YES)</option>
-                                            <option value="ECO">Ekonomi</option>
+                                        <Label htmlFor="courier_select">Layanan Pengiriman {loadingRates && <span className="text-primary text-xs ml-2 animate-pulse">Memuat tarif...</span>}</Label>
+                                        <select 
+                                            id="courier_select" 
+                                            onChange={handleServiceChange} 
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                            required
+                                        >
+                                            <option value="">-- Pilih Layanan --</option>
+                                            {shippingRates.map((rate: any, idx) => (
+                                                <option key={idx} value={`${rate.company}|${rate.type}|${rate.price}`}>
+                                                    {rate.company.toUpperCase()} - {rate.type} ({formatCurrency(rate.price)})
+                                                </option>
+                                            ))}
+                                            {shippingRates.length === 0 && !loadingRates && (
+                                                <option disabled>Masukkan kode pos untuk melihat layanan.</option>
+                                            )}
                                         </select>
                                     </div>
                                 </div>
@@ -170,15 +292,19 @@ export default function Checkout() {
                             <div className="border-t pt-4 space-y-3">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Subtotal Produk</span>
-                                    <span className="font-medium">{formatCurrency(getTotalPrice())}</span>
+                                    <span className="font-medium">{formatCurrency(subtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Ongkos Kirim</span>
-                                    <span className="font-medium">Dihitung otomatis</span>
+                                    <span className="font-medium">{form.shipping_cost > 0 ? formatCurrency(form.shipping_cost) : "Pilih layanan"}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Pajak ({taxPercentage}%)</span>
+                                    <span className="font-medium">{formatCurrency(taxAmount)}</span>
                                 </div>
                                 <div className="flex justify-between text-lg font-bold border-t pt-3 mt-3">
                                     <span>Total Pembayaran</span>
-                                    <span className="text-primary">{formatCurrency(getTotalPrice())}</span>
+                                    <span className="text-primary">{formatCurrency(grandTotal)}</span>
                                 </div>
                             </div>
 
@@ -186,9 +312,9 @@ export default function Checkout() {
                                 type="submit" 
                                 form="checkout-form"
                                 className="w-full mt-6 h-12 text-lg" 
-                                disabled={processing}
+                                disabled={processing || form.shipping_cost === 0}
                             >
-                                {processing ? "Memproses..." : "Buat Pesanan"}
+                                {processing ? "Memproses..." : "Bayar Sekarang"}
                             </Button>
                         </div>
                     </div>

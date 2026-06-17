@@ -14,6 +14,19 @@ class ProductImage extends Model
         'sort_order',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($image) {
+            $exists = static::where('product_id', $image->product_id)
+                ->where('is_primary', true)
+                ->exists();
+
+            if (!$exists) {
+                $image->is_primary = true;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

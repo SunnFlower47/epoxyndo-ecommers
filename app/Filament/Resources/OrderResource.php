@@ -124,15 +124,21 @@ class OrderResource extends Resource
                 ->schema([
                     TextEntry::make('shipping_address.name')
                         ->label('Penerima')
-                        ->state(fn (Order $record) => $record->shipping_address['name'] ?? '-'),
+                        ->state(fn (Order $record) => $record->shipping_address['name'] ?? $record->customer_name ?? '-'),
                     
                     TextEntry::make('shipping_address.phone')
                         ->label('No. HP')
-                        ->state(fn (Order $record) => $record->shipping_address['phone'] ?? '-'),
+                        ->state(fn (Order $record) => $record->shipping_address['phone'] ?? $record->customer_phone ?? '-'),
                     
                     TextEntry::make('shipping_address.full_address')
                         ->label('Alamat Lengkap')
-                        ->state(fn (Order $record) => $record->shipping_address['full_address'] ?? '-')
+                        ->state(function (Order $record) {
+                            $address = $record->shipping_address['address'] ?? $record->shipping_address['full_address'] ?? '';
+                            $city = $record->shipping_address['city'] ?? '';
+                            $postal = $record->shipping_address['postal_code'] ?? '';
+                            $full = trim("$address $city $postal");
+                            return empty($full) ? '-' : $full;
+                        })
                         ->columnSpanFull(),
                     
                     TextEntry::make('courier')

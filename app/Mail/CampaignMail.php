@@ -37,10 +37,18 @@ class CampaignMail extends Mailable
 
     public function content(): Content
     {
+        $body = $this->campaign->body;
+        $baseUrl = rtrim(config('app.url'), '/');
+
+        // Convert src="/storage/" or href="/storage/" to absolute URLs
+        $body = preg_replace('/(src|href)=["\']\/storage\//i', '$1="' . $baseUrl . '/storage/', $body);
+        // Convert src="storage/" or href="storage/" to absolute URLs
+        $body = preg_replace('/(src|href)=["\']storage\//i', '$1="' . $baseUrl . '/storage/', $body);
+
         return new Content(
-            markdown: 'emails.campaign',
+            view: 'emails.campaign',
             with: [
-                'body' => $this->campaign->body,
+                'body' => $body,
             ],
         );
     }

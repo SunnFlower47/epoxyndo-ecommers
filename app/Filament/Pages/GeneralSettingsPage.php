@@ -103,6 +103,22 @@ class GeneralSettingsPage extends SettingsPage
                             ->url(),
                     ])->columns(2),
 
+                Section::make('Titik Gudang (Origin Pengiriman)')
+                    ->schema([
+                        Textarea::make('warehouse_address')
+                            ->label('Alamat Lengkap Gudang')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                        TextInput::make('warehouse_latitude')
+                            ->label('Latitude Gudang')
+                            ->numeric()
+                            ->step('any'),
+                        TextInput::make('warehouse_longitude')
+                            ->label('Longitude Gudang')
+                            ->numeric()
+                            ->step('any'),
+                    ])->columns(2),
+
                 Section::make('Keuangan & Pajak')
                     ->schema([
                         TextInput::make('tax_percentage')

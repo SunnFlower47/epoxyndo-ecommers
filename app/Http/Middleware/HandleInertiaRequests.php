@@ -59,8 +59,16 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'locale' => $locale,
+            'midtrans_client_key' => config('services.midtrans.client_key'),
+            'midtrans_is_production' => config('services.midtrans.is_production'),
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'snapToken' => $request->session()->get('snapToken'),
+                'orderNumber' => $request->session()->get('orderNumber'),
             ],
             'settings' => $settings,
             'general_settings' => [
