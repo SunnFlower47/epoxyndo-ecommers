@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Head, usePage, router } from "@inertiajs/react";
 import StorefrontLayout from "@/layouts/storefront-layout";
-import { useCartStore } from "@/stores/use-cart-store";
+import { useCartStore, getItemPrice } from "@/stores/use-cart-store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -235,12 +235,12 @@ export default function Checkout() {
             if (data.success) {
                 setDiscountAmount(data.discount_amount);
                 setAppliedCoupon(couponInput);
-                setForm('coupon_code', couponInput);
+                setForm(prev => ({ ...prev, coupon_code: couponInput }));
                 setCouponMessage({ text: data.message, type: 'success' });
             } else {
                 setDiscountAmount(0);
                 setAppliedCoupon(null);
-                setForm('coupon_code', "");
+                setForm(prev => ({ ...prev, coupon_code: "" }));
                 setCouponMessage({ text: data.message, type: 'error' });
             }
         } catch (error) {
@@ -254,7 +254,7 @@ export default function Checkout() {
         setAppliedCoupon(null);
         setDiscountAmount(0);
         setCouponInput("");
-        setForm('coupon_code', "");
+        setForm(prev => ({ ...prev, coupon_code: "" }));
         setCouponMessage(null);
     };
 
@@ -444,7 +444,7 @@ export default function Checkout() {
                                 {items.map((item) => {
                                     const baseName = typeof item.product.name === "string" ? item.product.name : (item.product.name?.id || "Produk");
                                     const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : (item.product.variant_label ? `${baseName} - ${item.product.variant_label}` : baseName);
-                                    const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price);
+                                    const price = getItemPrice(item);
                                     
                                     return (
                                         <div key={item.id} className="flex justify-between items-start gap-4 text-sm">

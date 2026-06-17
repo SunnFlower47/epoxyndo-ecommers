@@ -37,12 +37,13 @@ class BiteshipService
 
         // Siapkan Items
         $items = $order->items->map(function ($item) {
+            $itemWeight = $item->variant->weight ?? $item->product->weight ?? 1000;
             return [
                 'name' => $item->product_name ?? 'Produk Epoxyndo',
                 'description' => '',
-                'value' => (int) $item->unit_price,
+                'value' => (int) $item->price,
                 'quantity' => (int) $item->quantity,
-                'weight' => (int) ($item->product->weight ?? 1000), // Default 1kg jika kosong
+                'weight' => (int) $itemWeight, // Asumsi masih gram di DB
             ];
         })->toArray();
 

@@ -6,6 +6,4 @@ Route::post('/midtrans', function () {
     // Handle midtrans webhook
 });
 
-Route::post('/biteship', function () {
-    // Handle biteship webhook
-});
+Route::post('/biteship', [\App\Http\Controllers\Webhook\BiteshipController::class, 'handle']);

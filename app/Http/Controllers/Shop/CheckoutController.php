@@ -360,10 +360,13 @@ class CheckoutController extends Controller
 
     public function midtransCallback(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Midtrans Webhook Received:', $request->all());
+
         $serverKey = config('services.midtrans.server_key');
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
         
         if ($hashed == $request->signature_key) {
+            \Illuminate\Support\Facades\Log::info('Midtrans Signature Valid for Order: ' . $request->order_id);
             $order = Order::where('order_number', $request->order_id)->first();
             if ($order) {
                 if ($request->transaction_status == 'capture' || $request->transaction_status == 'settlement') {
