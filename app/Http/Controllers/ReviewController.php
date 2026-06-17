@@ -19,24 +19,24 @@ class ReviewController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        // Optional: Check if user actually bought the product
-        $hasBought = \App\Models\OrderItem::where('product_id', $request->product_id)
+        // Check if user actually bought the product and count how many times
+        $boughtCount = \App\Models\OrderItem::where('product_id', $request->product_id)
             ->whereHas('order', function ($q) {
                 $q->where('user_id', Auth::id())
                   ->where('status', 'completed');
-            })->exists();
+            })->count();
 
-        if (!$hasBought) {
+        if ($boughtCount === 0) {
             return response()->json(['message' => 'Anda hanya dapat memberikan ulasan untuk produk yang telah Anda beli dan pesanannya telah selesai.'], 403);
         }
 
-        // Check if user already reviewed
-        $existingReview = Review::where('user_id', Auth::id())
+        // Check how many reviews the user has already written for this product
+        $reviewCount = Review::where('user_id', Auth::id())
             ->where('product_id', $request->product_id)
-            ->first();
+            ->count();
 
-        if ($existingReview) {
-            return response()->json(['message' => 'Anda sudah memberikan ulasan untuk produk ini.'], 400);
+        if ($reviewCount >= $boughtCount) {
+            return response()->json(['message' => 'Anda sudah memberikan ulasan untuk pesanan ini.'], 400);
         }
 
         Review::create([
