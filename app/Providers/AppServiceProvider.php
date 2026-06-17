@@ -25,11 +25,29 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
-        // Cloudflare R2 does not support server-side CopyObject with ACLs.
-        // By setting moveFiles(false), Filament will read the temp file and
-        // re-upload it directly instead of using a server-side copy operation.
+        // Cloudflare R2 does NOT support server-side CopyObject with ACLs.
+        // We override saveUploadedFileUsing to read the temp file content directly
+        // and upload it fresh to S3, completely bypassing the CopyObject operation.
         \Filament\Forms\Components\FileUpload::configureUsing(function (\Filament\Forms\Components\FileUpload $upload) {
-            $upload->moveFiles(false);
+            $upload
+                ->moveFiles(false)
+                ->saveUploadedFileUsing(function (
+                    \Livewire\Features\SupportFileUploads\TemporaryUploadedFile $file,
+                ) use ($upload): string {
+                    $directory = $upload->getDirectory() ?? 'uploads';
+                    $disk      = $upload->getDiskName();
+                    $ext       = $file->getClientOriginalExtension();
+                    $filename  = (string) \Illuminate\Support\Str::ulid() . ($ext ? '.' . $ext : '');
+                    $path      = ltrim($directory . '/' . $filename, '/');
+
+                    // Read raw content and stream directly to S3/R2 — no CopyObject call
+                    \Illuminate\Support\Facades\Storage::disk($disk)->put(
+                        $path,
+                        $file->get(),
+                    );
+
+                    return $path;
+                });
         });
     }
 
