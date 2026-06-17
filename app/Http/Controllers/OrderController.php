@@ -22,9 +22,16 @@ class OrderController extends Controller
         $disk = config('filament.default_filesystem_disk', 'public');
         $isS3 = config("filesystems.disks.{$disk}.driver") === 's3';
 
+        // Get review counts per product for the user to determine if an item can be reviewed
+        $reviewCounts = \App\Models\Review::where('user_id', $request->user()->id)
+            ->selectRaw('product_id, count(*) as count')
+            ->groupBy('product_id')
+            ->pluck('count', 'product_id')
+            ->toArray();
+
         // Format orders to include image URLs and readable dates
-        $formattedOrders = $orders->map(function ($order) use ($disk, $isS3) {
-            $formattedItems = $order->items->map(function ($item) use ($disk, $isS3) {
+        $formattedOrders = $orders->map(function ($order) use ($disk, $isS3, &$reviewCounts) {
+            $formattedItems = $order->items->map(function ($item) use ($disk, $isS3, &$reviewCounts, $order) {
                 $imageUrl = null;
                 if ($item->product && $item->product->images->isNotEmpty()) {
                     $firstImage = $item->product->images->sortBy('sort_order')->first()->image_path;
@@ -32,6 +39,19 @@ class OrderController extends Controller
                         $imageUrl = $isS3 
                             ? Storage::disk($disk)->temporaryUrl($firstImage, now()->addMinutes(60))
                             : Storage::disk($disk)->url($firstImage);
+                    }
+                }
+                
+                $canReview = false;
+                if ($order->status === 'completed') {
+                    $pid = $item->product_id;
+                    $rCount = $reviewCounts[$pid] ?? 0;
+                    if ($rCount > 0) {
+                        // User has already written a review for this, consume one quota
+                        $reviewCounts[$pid]--;
+                    } else {
+                        // User has not exhausted review quota for this product
+                        $canReview = true;
                     }
                 }
                 
@@ -44,6 +64,7 @@ class OrderController extends Controller
                     'total' => $item->total,
                     'image_url' => $imageUrl,
                     'slug' => $item->product ? $item->product->slug : null,
+                    'can_review' => $canReview,
                 ];
             });
 
