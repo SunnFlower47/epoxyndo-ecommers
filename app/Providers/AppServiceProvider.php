@@ -24,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Cloudflare R2 does not support server-side CopyObject with ACLs.
+        // By setting moveFiles(false), Filament will read the temp file and
+        // re-upload it directly instead of using a server-side copy operation.
+        \Filament\Forms\Components\FileUpload::configureUsing(function (\Filament\Forms\Components\FileUpload $upload) {
+            $upload->moveFiles(false);
+        });
     }
 
     /**
