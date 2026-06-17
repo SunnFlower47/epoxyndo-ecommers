@@ -7,7 +7,7 @@ import { Package, Truck, CheckCircle, Clock, Star, MessageSquare } from "lucide-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function Orders() {
     const { orders, midtrans_is_production, midtrans_client_key } = usePage<any>().props;
