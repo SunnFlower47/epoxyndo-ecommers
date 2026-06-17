@@ -41,6 +41,19 @@ interface CartState {
     getTotalPrice: () => number;
 }
 
+export const getItemPrice = (item: CartItem): number => {
+    // Determine the variant object (could be item.variant or item.product.variant depending on state version)
+    const variant = (item as any).variant || item.product?.variant;
+    if (variant) {
+        const finalPrice = Number(variant.final_price || 0);
+        const price = Number(variant.price || 0);
+        return finalPrice > 0 ? finalPrice : price;
+    }
+    const productFinalPrice = Number(item.product?.final_price || 0);
+    const productPrice = Number(item.product?.price || 0);
+    return productFinalPrice > 0 ? productFinalPrice : productPrice;
+};
+
 export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
@@ -174,8 +187,7 @@ export const useCartStore = create<CartState>()(
             
             getTotalPrice: () => {
                 return get().items.reduce((total, item) => {
-                    const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price || (item.product as any).price || 0);
-                    return total + (Number(price) * item.quantity);
+                    return total + (getItemPrice(item) * item.quantity);
                 }, 0);
             }
         }),

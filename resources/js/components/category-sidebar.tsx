@@ -50,8 +50,8 @@ export function CategorySidebar({ categories, locale, currentCategory }: Categor
         return (
             <li key={cat.id} className="flex flex-col">
                 <div className={`flex items-center justify-between px-2 py-2 text-sm rounded-md transition-colors ${isActive ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}>
-                    <Link 
-                        href={`/products?category=${encodeURIComponent(catName)}`} 
+                    <Link
+                        href={`/products?category=${encodeURIComponent(catName)}`}
                         className={`flex items-center gap-3 flex-1 ${level > 0 ? 'pl-6' : ''}`}
                     >
                         {level === 0 && (
@@ -65,7 +65,7 @@ export function CategorySidebar({ categories, locale, currentCategory }: Categor
                     </Link>
 
                     {hasChildren && (
-                        <button 
+                        <button
                             onClick={(e) => toggleExpand(cat.id, e)}
                             className="p-1 rounded hover:bg-black/5"
                         >
@@ -90,13 +90,13 @@ export function CategorySidebar({ categories, locale, currentCategory }: Categor
     return (
         <div className="sticky top-24 bg-card rounded-xl border p-5 shadow-sm max-h-[calc(100vh-100px)] flex flex-col">
             <h3 className="font-bold text-lg mb-4 text-foreground border-b pb-2 shrink-0">
-                {currentLocale === 'en' ? 'Store Categories' : 'Etalase Toko'}
+                {currentLocale === 'en' ? 'Product Categories' : 'Kategori Produk'}
             </h3>
             <div className="overflow-y-auto pr-2 -mr-2 space-y-1 flex-1">
                 <ul className="space-y-1">
                     <li>
-                        <Link 
-                            href="/products" 
+                        <Link
+                            href="/products"
                             className={`flex items-center justify-between px-2 py-2 text-sm rounded-md transition-colors ${!currentCategory ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}
                         >
                             <span className="font-medium">{currentLocale === 'en' ? 'All Products' : 'Semua Produk'}</span>

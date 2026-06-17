@@ -8,8 +8,8 @@ import {
     SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/stores/use-cart-store';
-import { ShoppingCart, Trash2, Plus, Minus, X } from 'lucide-react';
+import { useCartStore, getItemPrice } from '@/stores/use-cart-store';
+import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 
 export function CartDrawer() {
@@ -71,7 +71,7 @@ export function CartDrawer() {
                                     : (item.product.name?.id || item.product.name?.en || 'Produk');
                                 const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : (item.product.variant_label ? `${baseName} - ${item.product.variant_label}` : baseName);
                                     
-                                const price = item.product.variant ? (item.product.variant.final_price || item.product.variant.price) : (item.product.final_price || item.product.price || (item.product as any).price || 0);
+                                const price = getItemPrice(item);
                                 const imageUrl = (item.product as any).image || item.product.primary_image_url || item.product.primary_image?.r2_url || item.product.primary_image?.image_url || (item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null) || '/placeholder-product.webp';
 
                                 return (
@@ -106,7 +106,7 @@ export function CartDrawer() {
                                                     </span>
                                                     <button 
                                                         className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                                                        onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                         disabled={item.quantity >= item.product.stock && !item.product.is_preorder}
                                                     >
                                                         <Plus className="w-3 h-3" />
