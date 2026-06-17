@@ -12,6 +12,11 @@ export default function ProductShow({ product, relatedProducts }: any) {
     const { addItem, setIsOpen } = useCartStore();
 
     const [quantity, setQuantity] = useState(1);
+    const [selectedVariant, setSelectedVariant] = useState<any>(
+        product.active_variants && product.active_variants.length > 0 
+            ? product.active_variants[0] 
+            : null
+    );
     const [selectedImage, setSelectedImage] = useState(
         product.images && product.images.length > 0 
             ? product.images[0].image_url 
@@ -43,7 +48,9 @@ export default function ProductShow({ product, relatedProducts }: any) {
         const productForCart = {
             ...product,
             primary_image_url: images[0].image_url,
-            name: productName // Flatten name to string to avoid translation parse issues in cart if needed
+            name: productName,
+            variant: selectedVariant,
+            variant_id: selectedVariant?.id,
         };
         // Ensure quantity is passed as the SECOND argument so Zustand store picks it up
         addItem(productForCart, quantity);
@@ -140,15 +147,20 @@ export default function ProductShow({ product, relatedProducts }: any) {
                             
                             <div className="w-px h-5 bg-border hidden sm:block mr-4"></div>
                             
-                            <span className="font-medium">{product.stock > 0 ? (lang === 'id' ? 'Tersedia' : 'In Stock') : (lang === 'id' ? 'Habis' : 'Out of Stock')}</span>
+                            <span className="font-medium">
+                                {selectedVariant 
+                                    ? (selectedVariant.stock > 0 ? (lang === 'id' ? `Tersedia (${selectedVariant.stock})` : `In Stock (${selectedVariant.stock})`) : (lang === 'id' ? 'Habis' : 'Out of Stock'))
+                                    : (product.stock > 0 ? (lang === 'id' ? 'Tersedia' : 'In Stock') : (lang === 'id' ? 'Habis' : 'Out of Stock'))
+                                }
+                            </span>
                         </div>
 
                         <div className="mb-6">
                             <div className="flex items-end gap-3 mb-2">
                                 <span className="text-3xl font-bold text-primary">
-                                    Rp {number_format(product.final_price || product.price)}
+                                    Rp {number_format(selectedVariant ? selectedVariant.price : (product.final_price || product.price))}
                                 </span>
-                                {product.has_discount && (
+                                {!selectedVariant && product.has_discount && (
                                     <>
                                         <span className="text-lg text-muted-foreground line-through">
                                             Rp {number_format(product.price)}
@@ -160,6 +172,30 @@ export default function ProductShow({ product, relatedProducts }: any) {
                                 )}
                             </div>
                         </div>
+
+                        {product.active_variants && product.active_variants.length > 0 && (
+                            <div className="mb-6">
+                                <h3 className="text-sm font-medium mb-3">{lang === 'id' ? 'Pilih Varian (Berat/Ukuran)' : 'Select Variant (Weight/Size)'}</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {product.active_variants.map((variant: any) => (
+                                        <button
+                                            key={variant.id}
+                                            onClick={() => {
+                                                setSelectedVariant(variant);
+                                                setQuantity(1);
+                                            }}
+                                            className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
+                                                selectedVariant?.id === variant.id 
+                                                    ? 'border-primary bg-primary/10 text-primary ring-1 ring-primary' 
+                                                    : 'border-border text-muted-foreground hover:border-primary/50'
+                                            }`}
+                                        >
+                                            {variant.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-foreground mb-8 line-clamp-4">
                             <p>{productDesc}</p>
@@ -181,14 +217,16 @@ export default function ProductShow({ product, relatedProducts }: any) {
                                     </div>
                                     <button 
                                         className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                                        onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                                        disabled={quantity >= product.stock}
+                                        onClick={() => setQuantity(Math.min(selectedVariant ? selectedVariant.stock : product.stock, quantity + 1))}
+                                        disabled={quantity >= (selectedVariant ? selectedVariant.stock : product.stock)}
                                     >
                                         +
                                     </button>
                                 </div>
                                 <span className="text-sm text-muted-foreground">
-                                    {lang === 'id' ? `Tersisa ${product.stock} barang` : `${product.stock} items available`}
+                                    {lang === 'id' 
+                                        ? `Tersisa ${selectedVariant ? selectedVariant.stock : product.stock} barang` 
+                                        : `${selectedVariant ? selectedVariant.stock : product.stock} items available`}
                                 </span>
                             </div>
 
@@ -196,7 +234,7 @@ export default function ProductShow({ product, relatedProducts }: any) {
                                 <Button 
                                     className="flex-1 h-12 text-base font-semibold" 
                                     onClick={handleAddToCart}
-                                    disabled={product.stock <= 0}
+                                    disabled={(selectedVariant ? selectedVariant.stock : product.stock) <= 0}
                                 >
                                     <ShoppingCart className="w-5 h-5 mr-2" />
                                     {lang === 'id' ? 'Tambah ke Keranjang' : 'Add to Cart'}

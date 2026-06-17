@@ -26,6 +26,11 @@ class SendCampaignJob implements ShouldQueue
             }
         });
 
+        // Send Web Notifications to all registered users
+        \App\Models\User::chunk(100, function ($users) {
+            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\WebPromoNotification($this->campaign));
+        });
+
         $this->campaign->update([
             'status' => 'sent', // Marks the dispatch process as finished, actual emails are in queue
             'sent_at' => now(),

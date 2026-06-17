@@ -53,6 +53,9 @@ class CheckoutController extends Controller
             $productIds = collect($request->items)->pluck('product_id')->toArray();
             $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
 
+            $variantIds = collect($request->items)->pluck('variant_id')->filter()->toArray();
+            $variants = \App\Models\ProductVariant::whereIn('id', $variantIds)->get()->keyBy('id');
+
             foreach ($request->items as $item) {
                 $product = $products->get($item["product_id"]);
                 
@@ -60,13 +63,22 @@ class CheckoutController extends Controller
                     throw new \Exception("Produk dengan ID {$item['product_id']} tidak ditemukan.");
                 }
 
-                $price = $product->final_price; 
+                $variantId = $item['variant_id'] ?? null;
+                $variant = $variantId ? $variants->get($variantId) : null;
+
+                if ($variantId && !$variant) {
+                    throw new \Exception("Varian dengan ID {$variantId} tidak ditemukan.");
+                }
+
+                $price = $variant ? $variant->price : $product->final_price; 
                 
                 $itemSubtotal = $price * $item["quantity"];
                 $subtotal += $itemSubtotal;
 
                 $orderItems[] = [
                     "product_id" => $product->id,
+                    "variant_id" => $variantId,
+                    "variant_label" => $variant ? $variant->label : null,
                     "product_name" => $product->name,
                     "product_sku" => $product->sku ?? '-',
                     "price" => $price,
@@ -359,6 +371,10 @@ class CheckoutController extends Controller
                         'status' => Order::STATUS_PROCESSING,
                         'payment_status' => 'Lunas'
                     ]);
+                    
+                    if ($order->user) {
+                        $order->user->notify(new \App\Notifications\OrderSuccessNotification($order));
+                    }
                 } else if ($request->transaction_status == 'cancel' || $request->transaction_status == 'deny' || $request->transaction_status == 'expire') {
                     $order->update([
                         'status' => Order::STATUS_CANCELLED,

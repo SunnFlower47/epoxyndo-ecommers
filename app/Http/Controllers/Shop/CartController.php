@@ -37,6 +37,7 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => ['required', 'exists:products,id'],
+            'variant_id' => ['nullable', 'exists:product_variants,id'],
             'qty' => ['required', 'integer', 'min:1'],
         ]);
 
@@ -45,6 +46,7 @@ class CartController extends Controller
 
         $this->cartService->addToCart(
             productId: $request->product_id,
+            variantId: $request->variant_id,
             quantity: $request->qty,
             userId: $userId,
             sessionId: $sessionId

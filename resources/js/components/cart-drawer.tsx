@@ -66,11 +66,12 @@ export function CartDrawer() {
                     ) : (
                         <div className="space-y-6">
                             {items.map((item) => {
-                                const name = typeof item.product.name === 'string' 
+                                const baseName = typeof item.product.name === 'string' 
                                     ? (item.product.name.startsWith('{') ? JSON.parse(item.product.name).id || JSON.parse(item.product.name).en : item.product.name)
                                     : (item.product.name?.id || item.product.name?.en || 'Produk');
+                                const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
                                     
-                                const price = item.product.final_price || item.product.price || (item.product as any).price || 0;
+                                const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price || (item.product as any).price || 0);
                                 const imageUrl = (item.product as any).image || item.product.primary_image_url || item.product.primary_image?.r2_url || item.product.primary_image?.image_url || (item.product.images && item.product.images.length > 0 ? item.product.images[0].image_url : null) || '/placeholder-product.webp';
 
                                 return (
@@ -82,7 +83,7 @@ export function CartDrawer() {
                                             <div className="flex justify-between items-start gap-2">
                                                 <h4 className="font-medium text-sm line-clamp-2">{name}</h4>
                                                 <button 
-                                                    onClick={() => removeItem(item.product_id)}
+                                                    onClick={() => removeItem(item.id)}
                                                     className="text-muted-foreground hover:text-destructive shrink-0"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -95,7 +96,7 @@ export function CartDrawer() {
                                                 <div className="flex items-center border rounded-md">
                                                     <button 
                                                         className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                                                        onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                         disabled={item.quantity <= 1}
                                                     >
                                                         <Minus className="w-3 h-3" />

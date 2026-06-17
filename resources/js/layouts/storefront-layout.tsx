@@ -5,6 +5,7 @@ import { Search, ShoppingCart, User, Menu, Sun, Moon, Globe, Bell, LogOut, Layou
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/stores/use-cart-store';
 import { CartDrawer } from '@/components/cart-drawer';
+import { NotificationDropdown } from '@/components/notification-dropdown';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -194,53 +195,7 @@ export default function StorefrontLayout({ children }: PropsWithChildren) {
                             </Button>
 
                             {/* Notifications Toggle */}
-                            <div className="relative">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="relative hover:bg-muted/50 transition-colors"
-                                    onClick={() => setShowNotifications(!showNotifications)}
-                                    title={lang === 'id' ? "Notifikasi" : "Notifications"}
-                                >
-                                    <Bell className="h-5 w-5" />
-                                    <span className="absolute top-1 right-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-red-500">
-                                    </span>
-                                    <span className="sr-only">Notifikasi</span>
-                                </Button>
-                                
-                                {showNotifications && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-                                        <div className="absolute right-0 mt-2 w-80 bg-background border rounded-lg shadow-lg overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                                            <div className="p-4 border-b">
-                                                <h3 className="font-semibold text-lg">{lang === 'id' ? 'Notifikasi' : 'Notifications'}</h3>
-                                            </div>
-                                            <div className="max-h-[300px] overflow-y-auto">
-                                                {/* Dummy Notification Items */}
-                                                <div className="p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer">
-                                                    <h4 className="font-medium text-sm">{lang === 'id' ? 'Pesanan Berhasil' : 'Order Successful'}</h4>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {lang === 'id' ? 'Pesanan #INV-12345 Anda telah dikonfirmasi dan sedang diproses.' : 'Your order #INV-12345 has been confirmed and is being processed.'}
-                                                    </p>
-                                                    <span className="text-[10px] text-muted-foreground mt-2 block">10 {lang === 'id' ? 'menit yang lalu' : 'minutes ago'}</span>
-                                                </div>
-                                                <div className="p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer bg-primary/5">
-                                                    <h4 className="font-medium text-sm text-primary">{lang === 'id' ? 'Promo Spesial!' : 'Special Promo!'}</h4>
-                                                    <p className="text-xs text-muted-foreground mt-1">
-                                                        {lang === 'id' ? 'Dapatkan diskon 20% untuk semua produk Resin! Kode: EPOXYNDO20' : 'Get 20% off for all Resin products! Code: EPOXYNDO20'}
-                                                    </p>
-                                                    <span className="text-[10px] text-muted-foreground mt-2 block">1 {lang === 'id' ? 'jam yang lalu' : 'hour ago'}</span>
-                                                </div>
-                                            </div>
-                                            <div className="p-3 text-center border-t bg-muted/20">
-                                                <button className="text-sm text-primary font-medium hover:underline">
-                                                    {lang === 'id' ? 'Lihat Semua' : 'View All'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                            {auth.user && <NotificationDropdown />}
 
                             {/* Cart Toggle */}
                             <Button 

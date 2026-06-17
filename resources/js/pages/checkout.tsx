@@ -145,7 +145,7 @@ export default function Checkout() {
                         },
                         body: JSON.stringify({
                             destination_postal_code: form.postal_code,
-                            items: items.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
+                            items: items.map(i => ({ product_id: i.product_id, variant_id: i.variant_id, quantity: i.quantity }))
                         })
                     });
                     const data = await response.json();
@@ -201,6 +201,7 @@ export default function Checkout() {
             ...form,
             items: items.map(item => ({
                 product_id: item.product_id,
+                variant_id: item.variant_id,
                 quantity: item.quantity
             }))
         }, {
@@ -440,17 +441,23 @@ export default function Checkout() {
                             <h2 className="text-xl font-semibold mb-6">Ringkasan Pesanan</h2>
                             
                             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
-                                {items.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-start gap-4 text-sm">
-                                        <div>
-                                            <p className="font-medium">{typeof item.product.name === "string" ? item.product.name : item.product.name?.id}</p>
-                                            <p className="text-muted-foreground">{item.quantity} x {formatCurrency(item.product.final_price || item.product.price)}</p>
+                                {items.map((item) => {
+                                    const baseName = typeof item.product.name === "string" ? item.product.name : (item.product.name?.id || "Produk");
+                                    const name = item.product.variant ? `${baseName} - ${item.product.variant.label}` : baseName;
+                                    const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price);
+                                    
+                                    return (
+                                        <div key={item.id} className="flex justify-between items-start gap-4 text-sm">
+                                            <div>
+                                                <p className="font-medium">{name}</p>
+                                                <p className="text-muted-foreground">{item.quantity} x {formatCurrency(price)}</p>
+                                            </div>
+                                            <p className="font-medium text-right shrink-0">
+                                                {formatCurrency(price * item.quantity)}
+                                            </p>
                                         </div>
-                                        <p className="font-medium text-right shrink-0">
-                                            {formatCurrency((item.product.final_price || item.product.price) * item.quantity)}
-                                        </p>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             <div className="border-t pt-4 mb-4">

@@ -16,7 +16,8 @@ interface Product {
 export interface CartItem {
     id: string; // Unique local ID for the cart item, e.g., `${productId}` or `${productId}-${variantId}`
     product_id: number;
-    product: Product;
+    variant_id?: string;
+    product: Product & { variant?: any, variant_id?: string };
     quantity: number;
 }
 
@@ -26,9 +27,9 @@ interface CartState {
     setIsOpen: (isOpen: boolean) => void;
     
     // Actions
-    addItem: (product: Product, quantity?: number) => void;
-    removeItem: (productId: number) => void;
-    updateQuantity: (productId: number, quantity: number) => void;
+    addItem: (product: Product & { variant?: any, variant_id?: string }, quantity?: number) => void;
+    removeItem: (itemId: string) => void;
+    updateQuantity: (itemId: string, quantity: number) => void;
     clearCart: () => void;
     
     // Sync with DB
@@ -50,16 +51,21 @@ export const useCartStore = create<CartState>()(
             
             addItem: (product, quantity = 1) => {
                 set((state) => {
-                    const existingItemIndex = state.items.findIndex(item => item.product_id === product.id);
+                    const variantId = product.variant_id;
+                    const itemId = variantId ? `${product.id}-${variantId}` : `${product.id}`;
                     
+                    const existingItemIndex = state.items.findIndex(item => item.id === itemId);
+                    
+                    const maxStock = product.variant ? product.variant.stock : product.stock;
+
                     if (existingItemIndex >= 0) {
                         // Update quantity if item exists
                         const newItems = [...state.items];
                         const newQuantity = newItems[existingItemIndex].quantity + quantity;
                         
                         // Limit to stock
-                        if (newQuantity > product.stock && !product.is_preorder) {
-                            newItems[existingItemIndex].quantity = product.stock;
+                        if (newQuantity > maxStock && !product.is_preorder) {
+                            newItems[existingItemIndex].quantity = maxStock;
                         } else {
                             newItems[existingItemIndex].quantity = newQuantity;
                         }
@@ -68,11 +74,12 @@ export const useCartStore = create<CartState>()(
                     }
                     
                     // Add new item
-                    const finalQty = quantity > product.stock && !product.is_preorder ? product.stock : quantity;
+                    const finalQty = quantity > maxStock && !product.is_preorder ? maxStock : quantity;
                     
                     const newItem: CartItem = {
-                        id: `${product.id}`,
+                        id: itemId,
                         product_id: product.id,
+                        variant_id: variantId,
                         product,
                         quantity: finalQty
                     };
@@ -81,20 +88,21 @@ export const useCartStore = create<CartState>()(
                 });
             },
             
-            removeItem: (productId) => {
+            removeItem: (itemId) => {
                 set((state) => ({
-                    items: state.items.filter(item => item.product_id !== productId)
+                    items: state.items.filter(item => item.id !== itemId)
                 }));
             },
             
-            updateQuantity: (productId, quantity) => {
+            updateQuantity: (itemId, quantity) => {
                 set((state) => ({
                     items: state.items.map(item => {
-                        if (item.product_id === productId) {
+                        if (item.id === itemId) {
                             // Enforce min 1 and max stock
+                            const maxStock = item.product.variant ? item.product.variant.stock : item.product.stock;
                             let newQty = Math.max(1, quantity);
-                            if (newQty > item.product.stock && !item.product.is_preorder) {
-                                newQty = item.product.stock;
+                            if (newQty > maxStock && !item.product.is_preorder) {
+                                newQty = maxStock;
                             }
                             return { ...item, quantity: newQty };
                         }
@@ -113,6 +121,7 @@ export const useCartStore = create<CartState>()(
                 try {
                     const payload = items.map(item => ({
                         product_id: item.product_id,
+                        variant_id: item.variant_id,
                         quantity: item.quantity
                     }));
                     
@@ -145,9 +154,10 @@ export const useCartStore = create<CartState>()(
                         if (data && data.items) {
                             // Transform DB cart items to local format if needed
                             const dbItems: CartItem[] = data.items.map((dbItem: any) => ({
-                                id: `${dbItem.product_id}`,
+                                id: dbItem.variant_id ? `${dbItem.product_id}-${dbItem.variant_id}` : `${dbItem.product_id}`,
                                 product_id: dbItem.product_id,
-                                product: dbItem.product,
+                                variant_id: dbItem.variant_id,
+                                product: { ...dbItem.product, variant: dbItem.variant },
                                 quantity: dbItem.quantity
                             }));
                             set({ items: dbItems });
@@ -164,7 +174,7 @@ export const useCartStore = create<CartState>()(
             
             getTotalPrice: () => {
                 return get().items.reduce((total, item) => {
-                    const price = item.product.final_price || item.product.price || (item.product as any).price || 0;
+                    const price = item.product.variant ? item.product.variant.price : (item.product.final_price || item.product.price || (item.product as any).price || 0);
                     return total + (Number(price) * item.quantity);
                 }, 0);
             }

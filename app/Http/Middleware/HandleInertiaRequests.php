@@ -60,6 +60,7 @@ class HandleInertiaRequests extends Middleware
             'midtrans_is_production' => config('services.midtrans.is_production'),
             'auth' => [
                 'user' => $request->user(),
+                'unread_notifications_count' => $request->user() ? $request->user()->unreadNotifications()->count() : 0,
             ],
             'flash' => [
                 'success' => $request->session()->get('success'),

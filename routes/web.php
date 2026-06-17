@@ -65,4 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
     Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
     Route::post('/addresses/{address}/primary', [AddressController::class, 'setPrimary'])->name('addresses.primary');
+
+    // Notifications API
+    Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
+    Route::post('/api/notifications/{id}/mark-as-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
 });

@@ -14,11 +14,11 @@ class CartService
     public function getCartItems(int|string|null $userId = null, ?string $sessionId = null): Collection
     {
         if ($userId) {
-            return Cart::where('user_id', $userId)->with('product')->get();
+            return Cart::where('user_id', $userId)->with(['product', 'variant'])->get();
         }
 
         if ($sessionId) {
-            return Cart::where('session_id', $sessionId)->with('product')->get();
+            return Cart::where('session_id', $sessionId)->with(['product', 'variant'])->get();
         }
 
         return collect();
@@ -27,9 +27,9 @@ class CartService
     /**
      * Add product to cart.
      */
-    public function addToCart(int $productId, int $quantity, ?int $userId = null, ?string $sessionId = null): Cart
+    public function addToCart(int $productId, ?string $variantId, int $quantity, ?int $userId = null, ?string $sessionId = null): Cart
     {
-        $query = Cart::where('product_id', $productId);
+        $query = Cart::where('product_id', $productId)->where('variant_id', $variantId);
 
         if ($userId) {
             $query->where('user_id', $userId);
@@ -48,6 +48,7 @@ class CartService
             'user_id' => $userId,
             'session_id' => $userId ? null : $sessionId,
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'qty' => $quantity,
         ]);
     }

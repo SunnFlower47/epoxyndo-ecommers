@@ -86,6 +86,7 @@ class ProductController extends Controller
         $product = Product::with([
             'images', 
             'category', 
+            'activeVariants',
             'reviews' => function($q) {
                 $q->where('is_approved', true)->with('user')->latest();
             }
