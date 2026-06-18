@@ -52,8 +52,7 @@ class GeneralSettingsPage extends SettingsPage
                         FileUpload::make('company_logo')
                             ->label('Logo Perusahaan')
                             ->image()
-                            ->directory('settings')
-                            ->disk(env('FILESYSTEM_DISK', 's3')),
+                            ->directory('settings'),
                     ])->columns(2),
 
                 Section::make('Lokasi Perusahaan (Alamat)')
