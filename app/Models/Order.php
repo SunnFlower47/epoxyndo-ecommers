@@ -70,6 +70,14 @@ class Order extends Model
                         $item->product->decrement('stock', $item->quantity);
                     }
                 }
+
+                // Send Paid Email
+                try {
+                    \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                        ->send(new \App\Mail\OrderPaidMail($order));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send OrderPaidMail: ' . $e->getMessage());
+                }
             }
 
             // Restore stock when status changes to 'cancelled' 
