@@ -40,6 +40,7 @@ class CheckoutController extends Controller
             "postal_code" => "required|string",
             "courier" => "nullable|string",
             "courier_service" => "nullable|string",
+            "shipping_cost" => "nullable|numeric|min:0",
             "coupon_code" => "nullable|string",
         ]);
 
@@ -70,6 +71,12 @@ class CheckoutController extends Controller
                     throw new \Exception("Varian dengan ID {$variantId} tidak ditemukan.");
                 }
 
+                $availableStock = $variant ? $variant->stock : $product->stock;
+                if ($availableStock < $item["quantity"]) {
+                    $itemName = $product->name . ($variant ? " - " . $variant->label : "");
+                    throw new \Exception("Stok untuk produk {$itemName} tidak mencukupi. (Sisa stok: {$availableStock})");
+                }
+
                 $price = $variant ? $variant->final_price : $product->final_price; 
                 
                 $itemSubtotal = $price * $item["quantity"];
@@ -96,6 +103,9 @@ class CheckoutController extends Controller
                 if ($coupon && $coupon->is_active) {
                     if ($coupon->valid_until && now()->greaterThan($coupon->valid_until)) {
                         throw new \Exception("Kupon sudah kedaluwarsa.");
+                    }
+                    if ($coupon->max_uses && $coupon->used_count >= $coupon->max_uses) {
+                        throw new \Exception("Kupon ini sudah melewati batas kuota penggunaan.");
                     }
                     if ($subtotal < $coupon->min_purchase) {
                         throw new \Exception("Minimal belanja untuk kupon ini adalah Rp " . number_format($coupon->min_purchase, 0, ',', '.'));

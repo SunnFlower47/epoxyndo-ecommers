@@ -94,6 +94,11 @@ class Order extends Model
                         }
                     }
                     
+                    // Restore coupon usage limit if a coupon was used
+                    if ($order->coupon_id && $order->coupon) {
+                        $order->coupon->decrement('used_count');
+                    }
+                    
                     try {
                         \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
                             ->send(new \App\Mail\OrderCancelledMail($order));
