@@ -67,10 +67,10 @@ class BiteshipWebhookService
             $shipment->update($updateData);
         }
 
-        // If delivered, update order status as well
+        // If delivered or cancelled, update order status as well
         if (isset($updateData['status'])) {
             if ($updateData['status'] === 'delivered') {
-                $shipment->order->update(['status' => 'completed']);
+                $shipment->order->update(['status' => \App\Models\Order::STATUS_COMPLETED]);
                 
                 // Send delivered email
                 try {
@@ -80,7 +80,9 @@ class BiteshipWebhookService
                     Log::error('Failed to send OrderDeliveredMail from Webhook: ' . $e->getMessage());
                 }
             } else if ($updateData['status'] === 'shipping') {
-                $shipment->order->update(['status' => 'shipped']);
+                $shipment->order->update(['status' => \App\Models\Order::STATUS_SHIPPED]);
+            } else if ($updateData['status'] === 'cancelled') {
+                $shipment->order->update(['status' => \App\Models\Order::STATUS_CANCELLED]);
             }
         }
 
