@@ -82,14 +82,30 @@ class Order extends Model
 
             // Restore stock when status changes to 'cancelled' 
             // ONLY if it was previously paid (because stock is only deducted when paid)
-            if ($order->wasChanged('status') && $order->status === self::STATUS_CANCELLED) {
-                if ($order->payment_status === self::PAYMENT_PAID || $order->getOriginal('payment_status') === self::PAYMENT_PAID) {
-                    foreach ($order->items as $item) {
-                        if ($item->variant_id && $item->variant) {
-                            $item->variant->increment('stock', $item->quantity);
-                        } else if ($item->product) {
-                            $item->product->increment('stock', $item->quantity);
+            if ($order->wasChanged('status')) {
+                if ($order->status === self::STATUS_CANCELLED) {
+                    if ($order->payment_status === self::PAYMENT_PAID || $order->getOriginal('payment_status') === self::PAYMENT_PAID) {
+                        foreach ($order->items as $item) {
+                            if ($item->variant_id && $item->variant) {
+                                $item->variant->increment('stock', $item->quantity);
+                            } else if ($item->product) {
+                                $item->product->increment('stock', $item->quantity);
+                            }
                         }
+                    }
+                } else if ($order->status === self::STATUS_SHIPPED) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                            ->send(new \App\Mail\OrderShippedMail($order, $order->shipment));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Failed to send OrderShippedMail on status change: ' . $e->getMessage());
+                    }
+                } else if ($order->status === self::STATUS_COMPLETED) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                            ->send(new \App\Mail\OrderDeliveredMail($order, $order->shipment));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Failed to send OrderDeliveredMail on status change: ' . $e->getMessage());
                     }
                 }
             }

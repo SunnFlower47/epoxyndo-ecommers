@@ -50,12 +50,12 @@ class BiteshipWebhookService
         if ($waybillNumber && !$shipment->tracking_number) {
             $updateData['tracking_number'] = $waybillNumber;
             $shipment->tracking_number = $waybillNumber; // temporary set for the mail
-
+            
             try {
                 \Illuminate\Support\Facades\Mail::to($shipment->order->customer_email ?? $shipment->order->user?->email)
                     ->send(new \App\Mail\OrderShippedMail($shipment->order, $shipment));
             } catch (\Exception $e) {
-                Log::error('Failed to send OrderShippedMail from Webhook: ' . $e->getMessage());
+                \Illuminate\Support\Facades\Log::error('Failed to send OrderShippedMail from Webhook: ' . $e->getMessage());
             }
         }
 
@@ -71,14 +71,6 @@ class BiteshipWebhookService
         if (isset($updateData['status'])) {
             if ($updateData['status'] === 'delivered') {
                 $shipment->order->update(['status' => \App\Models\Order::STATUS_COMPLETED]);
-                
-                // Send delivered email
-                try {
-                    \Illuminate\Support\Facades\Mail::to($shipment->order->customer_email ?? $shipment->order->user?->email)
-                        ->send(new \App\Mail\OrderDeliveredMail($shipment->order, $shipment));
-                } catch (\Exception $e) {
-                    Log::error('Failed to send OrderDeliveredMail from Webhook: ' . $e->getMessage());
-                }
             } else if ($updateData['status'] === 'shipping') {
                 $shipment->order->update(['status' => \App\Models\Order::STATUS_SHIPPED]);
             } else if ($updateData['status'] === 'cancelled') {

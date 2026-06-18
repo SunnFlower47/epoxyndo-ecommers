@@ -101,6 +101,15 @@ class BiteshipService
         ]);
 
         // Email notifikasi akan dikirim melalui Webhook saat resi (waybill_id) sudah benar-benar terbit.
+        // TAPI jika Biteship langsung mengembalikan waybill_id saat pembuatan, kirim email sekarang.
+        if (!empty($shipment->tracking_number)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                    ->send(new \App\Mail\OrderShippedMail($order, $shipment));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send OrderShippedMail from BiteshipService: ' . $e->getMessage());
+            }
+        }
 
         return $shipment;
     }
