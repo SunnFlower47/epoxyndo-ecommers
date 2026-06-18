@@ -24,7 +24,10 @@
                                 $logoUrl = null;
                                 if (!empty($settings->company_logo)) {
                                     $disk = config('filament.default_filesystem_disk', 'public');
-                                    $logoUrl = \Illuminate\Support\Facades\Storage::disk($disk)->url($settings->company_logo);
+                                    $isS3 = config("filesystems.disks.{$disk}.driver") === 's3';
+                                    $logoUrl = $isS3 
+                                        ? \Illuminate\Support\Facades\Storage::disk($disk)->temporaryUrl($settings->company_logo, now()->addMinutes(60))
+                                        : \Illuminate\Support\Facades\Storage::disk($disk)->url($settings->company_logo);
                                     if (str_starts_with($logoUrl, '/')) {
                                         $logoUrl = rtrim(config('app.url'), '/') . $logoUrl;
                                     }
