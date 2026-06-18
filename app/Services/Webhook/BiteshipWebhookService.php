@@ -71,7 +71,7 @@ class BiteshipWebhookService
         if (isset($updateData['status'])) {
             if ($updateData['status'] === 'delivered') {
                 $shipment->order->update(['status' => \App\Models\Order::STATUS_COMPLETED]);
-            } else if ($updateData['status'] === 'shipping') {
+            } else if (in_array($updateData['status'], ['picked_up', 'shipping'])) {
                 $shipment->order->update(['status' => \App\Models\Order::STATUS_SHIPPED]);
             } else if ($updateData['status'] === 'cancelled') {
                 $shipment->order->update(['status' => \App\Models\Order::STATUS_CANCELLED]);
