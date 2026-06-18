@@ -93,6 +93,13 @@ class Order extends Model
                             }
                         }
                     }
+                    
+                    try {
+                        \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
+                            ->send(new \App\Mail\OrderCancelledMail($order));
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::error('Failed to send OrderCancelledMail on status change: ' . $e->getMessage());
+                    }
                 } else if ($order->status === self::STATUS_SHIPPED) {
                     try {
                         \Illuminate\Support\Facades\Mail::to($order->customer_email ?? $order->user?->email)
